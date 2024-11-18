@@ -39,7 +39,7 @@
                     </div>
                     <div class="col-md-4">
                         <div class="form-group">
-                            <label for="education_area_id">เขตพื้นที่การศึกษา 1</label>
+                            <label for="education_area_id">เขตพื้นที่การศึกษา</label>
                             <select class="form-control select2" id="education_area_id" name="education_area_id" required>
                                 <option value="">-- เลือกเขตพื้นที่การศึกษา --</option>
                                 @foreach ($education_area as $area)
