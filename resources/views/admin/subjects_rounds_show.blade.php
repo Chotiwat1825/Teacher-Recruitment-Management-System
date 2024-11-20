@@ -6,6 +6,9 @@
     <div class="d-flex justify-content-between">
         <h1>รายละเอียดข้อมูลการบรรจุ</h1>
         <div>
+            <button type="button" class="btn btn-success" id="nextRoundBtn">
+                <i class="fas fa-plus"></i> เพิ่มรอบการบรรจุ
+            </button>
             <a href="{{ route('admin.subjects.rounds.edit', $round[0]->id) }}" class="btn btn-warning">
                 <i class="fas fa-edit"></i> แก้ไข
             </a>
@@ -160,4 +163,31 @@
             font-weight: bold;
         }
     </style>
+@endsection
+
+@section('js')
+<script>
+$(document).ready(function() {
+    $('#nextRoundBtn').click(function() {
+        Swal.fire({
+            title: 'ยืนยันการเพิ่มรอบการบรรจุ?',
+            text: "ต้องการเพิ่มรอบการบรรจุจากรอบที่ {{ $round[0]->round_number }} เป็นรอบที่ {{ $round[0]->round_number + 1 }} ใช่หรือไม่?",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'ใช่, เพิ่มรอบ',
+            cancelButtonText: 'ยกเลิก'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = "{{ route('admin.subjects.rounds.next', [
+                    'year' => $round[0]->round_year,
+                    'area' => $round[0]->education_area_id,
+                    'round' => $round[0]->round_number
+                ]) }}";
+            }
+        });
+    });
+});
+</script>
 @endsection

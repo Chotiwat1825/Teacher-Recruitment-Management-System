@@ -146,11 +146,12 @@ class AdminController extends Controller
     // เพิ่มเมธอดสำหรับแสดงฟอร์มแก้ไข
     public function subjects_rounds_edit($id)
     {
-         $subjects = Subject::getSubjects();
-         $education_area = Admin::getEducationArea();
+        
+        $subjects = Subject::getSubjects();
+        $education_area = Admin::getEducationArea();
 
         // ดึงข้อมูลรอบการบรรจุ
-        $round = DB::table('subjects_rounds')->where('round_year', $id)->first();
+        $round = DB::table('subjects_rounds')->where('id', $id)->first();
 
         // ดึงข้อมูลวิชาเอกทั้งหมดในรอบนี้
 
@@ -159,7 +160,6 @@ class AdminController extends Controller
             ->where('education_area_id', $round->education_area_id)
             ->where('round_number', $round->round_number)
             ->get();
-        
 
         return view('admin.edit_subjects', compact('subjects', 'education_area', 'round', 'items'));
     }
@@ -212,6 +212,49 @@ class AdminController extends Controller
             ]);
 
         return redirect()->back()->with('success', 'อัพเดทข้อมูลการบรรจุเรียบร้อยแล้ว');
+    }
+    public function subjects_rounds_next($year, $area, $round)
+    {
+        // ดึงข้อมูลรอบปัจจุบัน
+        $currentRound = DB::table('subjects_rounds')
+            ->select('subjects_rounds.*', 'subjects.subject_group', 'education_area.name_education')
+            ->join('subjects', 'subjects_rounds.subject_id', '=', 'subjects.id')
+            ->join('education_area', 'subjects_rounds.education_area_id', '=', 'education_area.id')
+            ->where([
+                'round_year' => $year,
+                'education_area_id' => $area,
+                'round_number' => $round,
+            ])
+            ->get();
+        
+        // ตรวจสอบว่ามีข้อมูลหรือไม่
+        if ($currentRound->isEmpty()) {
+            return redirect()->back()->with('error', 'ไม่พบข้อมูลรอบการบรรจุ');
+        }
+
+        // สร้างข้อมูลสำหรับรอบถัดไป
+        $subjects = Subject::getSubjects();
+        $education_area = Admin::getEducationArea();
+
+        // ข้อมูลพื้นฐานสำหรับรอบใหม่
+        $nextRoundData = [
+            'round_year' => $currentRound[0]->round_year,
+            'education_area_id' => $currentRound[0]->education_area_id,
+            'round_number' => $currentRound[0]->round_number + 1,
+            'items' => [],
+        ];
+
+        // สร้างข้อมูลวิชาเอกจากรอบก่อนหน้า
+        foreach ($currentRound as $item) {
+            $nextRoundData['items'][] = [
+                'subject_id' => $item->subject_id,
+                'subject_group' => $item->subject_group,
+                'passed_exam' => $item->remaining, // ใช้จำนวนคงเหลือจากรอบก่อนหน้า
+                'previous_remaining' => $item->remaining, // เก็บข้อมูลคงเหลือจากรอบก่อน
+            ];
+        }
+
+        return view('admin.create_next_round', compact('nextRoundData', 'subjects', 'education_area'));
     }
     // Change Password
     public function changePassword()
