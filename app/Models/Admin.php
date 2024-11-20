@@ -4,11 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Pagination\Paginator;
 
 class Admin extends Model
 {
     protected $table = 'education_area';
     protected $fillable = ['name_education'];
+
 
     public static function getEducationArea()
     {

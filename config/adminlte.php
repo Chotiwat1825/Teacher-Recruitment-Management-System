@@ -329,6 +329,11 @@ return [
             'url' => 'admin/create_rounds',
             'icon' => 'fas fa-fw fa-plus',
         ],
+        [
+            'text' => 'ข้อมูลการบรรจุ',
+            'url' => '/admin/subjects/rounds',
+            'icon' => 'fas fa-fw fa-list',
+        ],
         ['header' => 'account_settings'],
         [
             'text' => 'profile',

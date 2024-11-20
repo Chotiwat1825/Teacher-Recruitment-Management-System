@@ -7,6 +7,8 @@
     <h1>แก้ไขโปรไฟล์</h1>
 @stop
 
+
+
 @section('content')
     <div class="row">
         <div class="col-md-6">

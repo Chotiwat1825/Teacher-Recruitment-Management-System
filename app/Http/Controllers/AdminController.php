@@ -114,6 +114,105 @@ class AdminController extends Controller
 
         return redirect()->back()->with('success', 'บันทึกข้อมูลการบรรจุเรียบร้อยแล้ว');
     }
+    public function subjects_rounds_index()
+    {
+        $rounds = DB::table('subjects_rounds')->select('subjects_rounds.round_year', 'subjects_rounds.education_area_id', 'subjects_rounds.round_number', 'subjects_rounds.created_at', 'education_area.name_education', DB::raw('COUNT(*) as subject_count'), DB::raw('SUM(passed_exam) as total_passed'), DB::raw('SUM(appointed) as total_appointed'), DB::raw('SUM(vacancy) as total_vacancy'), DB::raw('SUM(remaining) as total_remaining'))->join('education_area', 'subjects_rounds.education_area_id', '=', 'education_area.id')->groupBy('round_year', 'education_area_id', 'round_number', 'created_at', 'name_education')->orderBy('created_at', 'desc')->paginate(10);
+
+        //@dd($rounds);
+        return view('admin.subjects_rounds_index', compact('rounds'));
+    }
+
+    public function subjects_rounds_show($roundYear)
+    {
+        $round = DB::table('subjects_rounds')->select('subjects_rounds.*', 'subjects.subject_group', 'education_area.name_education')->join('subjects', 'subjects_rounds.subject_id', '=', 'subjects.id')->join('education_area', 'subjects_rounds.education_area_id', '=', 'education_area.id')->where('round_year', $roundYear)->get();
+
+        if ($round->isEmpty()) {
+            return redirect()->route('admin.subjects.rounds.index')->with('error', 'ไม่พบข้อมูลการบรรจุ');
+        }
+
+        return view('admin.subjects_rounds_show', compact('round'));
+    }
+
+    public function subjects_rounds_delete($roundYear)
+    {
+        try {
+            DB::table('subjects_rounds')->where('round_year', $roundYear)->delete();
+
+            return redirect()->route('admin.subjects.rounds.index')->with('success', 'ลบข้อมูลการบรรจุเรียบร้อยแล้ว');
+        } catch (\Exception $e) {
+            return redirect()->route('admin.subjects.rounds.index')->with('error', 'เกิดข้อผิดพลาดในการลบข้อมูล');
+        }
+    }
+    // เพิ่มเมธอดสำหรับแสดงฟอร์มแก้ไข
+    public function subjects_rounds_edit($id)
+    {
+         $subjects = Subject::getSubjects();
+         $education_area = Admin::getEducationArea();
+
+        // ดึงข้อมูลรอบการบรรจุ
+        $round = DB::table('subjects_rounds')->where('round_year', $id)->first();
+
+        // ดึงข้อมูลวิชาเอกทั้งหมดในรอบนี้
+
+        $items = DB::table('subjects_rounds')
+            ->where('round_year', $round->round_year)
+            ->where('education_area_id', $round->education_area_id)
+            ->where('round_number', $round->round_number)
+            ->get();
+        
+
+        return view('admin.edit_subjects', compact('subjects', 'education_area', 'round', 'items'));
+    }
+
+    // เพิ่มเมธอดสำหรับอัพเดทข้อมูล
+    public function subjects_rounds_update(Request $request)
+    {
+        // Validate
+        $request->validate([
+            'round_year' => 'required|integer',
+            'education_area_id' => 'required|integer',
+            'round_number' => 'required|integer',
+            'items' => 'required|array',
+            'items.*.id' => 'required|integer|exists:subjects_rounds,id',
+            'items.*.subject_id' => 'required|integer|exists:subjects,id',
+            'items.*.passed_exam' => 'required|integer|min:0',
+            'items.*.vacancy' => 'required|integer|min:0',
+            'items.*.notes' => 'nullable|string',
+            'created_at' => 'required|date',
+        ]);
+
+        // อัพเดทข้อมูลแต่ละรายการ
+        foreach ($request->items as $item) {
+            $appointed = $item['vacancy'];
+            $remaining = $item['passed_exam'] - $item['vacancy'];
+
+            DB::table('subjects_rounds')
+                ->where('id', $item['id'])
+                ->update([
+                    'subject_id' => $item['subject_id'],
+                    'passed_exam' => $item['passed_exam'],
+                    'appointed' => $appointed,
+                    'vacancy' => $item['vacancy'],
+                    'remaining' => $remaining,
+                    'notes' => $item['notes'] ?? '',
+                    'updated_at' => now(),
+                ]);
+        }
+
+        // อัพเดทข้อมูลหลัก
+        DB::table('subjects_rounds')
+            ->where('round_year', $request->old_round_year)
+            ->where('education_area_id', $request->old_education_area_id)
+            ->where('round_number', $request->old_round_number)
+            ->update([
+                'round_year' => $request->round_year,
+                'education_area_id' => $request->education_area_id,
+                'round_number' => $request->round_number,
+                'created_at' => $request->created_at,
+            ]);
+
+        return redirect()->back()->with('success', 'อัพเดทข้อมูลการบรรจุเรียบร้อยแล้ว');
+    }
     // Change Password
     public function changePassword()
     {

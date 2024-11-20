@@ -5,8 +5,6 @@
 @section('content_header')
     <h1>ข้อมูลเขตพื้นที่การศึกษา</h1>
 @stop
-@vite(['resources/js/app.js'])
-@extends('layouts.sweetalert2')
 
 @section('content')
     <div class="card">
@@ -30,22 +28,27 @@
                             <td>{{ $item->name_education }}</td>
                             <td>
                                 <div class="d-flex justify-content-center">
-                                    <form action="{{ route('admin.education.area.edit') }}" method="post">
-                                        @csrf
-                                        <input type="hidden" name="id" value="{{ $item->id }}">
-                                        <button type="submit" class="btn btn-warning"><i class="fas fa-edit"></i></button>
-                                    </form>
-
-                                    <a href="{{ route('admin.education.area.delete') }}" value="{{ $item->id }}"
-                                        class="btn btn-danger" onclick="return confirm('คุณต้องการลบข้อมูลนี้หรือไม่?')"><i
-                                            class="fas fa-trash"></i></a>
+                                    <div class="mr-2">
+                                        <form action="{{ route('admin.education.area.edit') }}" method="post">
+                                            @csrf
+                                            <input type="hidden" name="id" value="{{ $item->id }}">
+                                            <button type="submit" class="btn btn-warning"><i
+                                                    class="fas fa-edit"></i></button>
+                                        </form>
+                                    </div>
+                                    <div class="mr-2">
+                                        <a href="{{ route('admin.education.area.delete') }}" value="{{ $item->id }}"
+                                            class="btn btn-danger"
+                                            onclick="return confirm('คุณต้องการลบข้อมูลนี้หรือไม่?')"><i
+                                                class="fas fa-trash"></i></a>
+                                    </div>
                                 </div>
                             </td>
                         </tr>
                     @endforeach
                 </tbody>
             </table>
-            {{-- {{ $geteducation_area->links() }} --}}
+            {{-- {{ $education_area->links() }} --}}
         </div>
     </div>
 @stop

@@ -6,6 +6,8 @@
     <h1>Dashboard</h1>
 @stop
 
+
+
 @section('content')
     <div class="row">
         <div class="col-lg-3 col-6">
