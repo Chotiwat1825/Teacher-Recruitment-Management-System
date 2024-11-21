@@ -145,14 +145,14 @@ class AdminController extends Controller
                     AND sr2.education_area_id = subjects_rounds.education_area_id
                     AND sr2.subject_id = subjects_rounds.subject_id
                     AND sr2.round_number <= subjects_rounds.round_number
-                ) as total_appointed') // คำนวณยอดบรรจุสะสม
+                ) as total_appointed'), // คำนวณยอดบรรจุสะสม
             )
             ->join('subjects', 'subjects_rounds.subject_id', '=', 'subjects.id')
             ->join('education_area', 'subjects_rounds.education_area_id', '=', 'education_area.id')
             ->where([
                 'subjects_rounds.round_year' => $roundYear,
                 'subjects_rounds.education_area_id' => $educationAreaId,
-                'subjects_rounds.round_number' => $roundNumber
+                'subjects_rounds.round_number' => $roundNumber,
             ])
             ->get();
 
@@ -258,27 +258,30 @@ class AdminController extends Controller
     public function subjects_rounds_next($year, $area, $round)
     {
         // ดึงข้อมูลรอบปัจจุบัน
-        $currentRound = DB::table('subjects_rounds')
-            ->select('subjects_rounds.*', 'subjects.subject_group', 'education_area.name_education')
-            ->join('subjects', 'subjects_rounds.subject_id', '=', 'subjects.id')
-            ->join('education_area', 'subjects_rounds.education_area_id', '=', 'education_area.id')
+        $currentRound = DB::table('subjects_rounds AS sr')
+            ->select(
+                'sr.*',
+                'subjects.subject_group',
+                'education_area.name_education',
+                DB::raw('(
+                    SELECT SUM(sr2.vacancy)
+                    FROM subjects_rounds sr2
+                    WHERE sr2.round_year = sr.round_year
+                    AND sr2.education_area_id = sr.education_area_id
+                    AND sr2.subject_id = sr.subject_id
+                    AND sr2.round_number <= sr.round_number
+                ) as total_appointed'), // คำนวณยอดบรรจุสะสม
+            )
+            ->join('subjects', 'sr.subject_id', '=', 'subjects.id')
+            ->join('education_area', 'sr.education_area_id', '=', 'education_area.id')
             ->where([
-                'round_year' => $year,
-                'education_area_id' => $area,
-                'round_number' => $round,
+                'sr.round_year' => $year,
+                'sr.education_area_id' => $area,
+                'sr.round_number' => $round,
             ])
             ->get();
 
-        // ตรวจสอบว่ามีข้อมูลหรือไม่
-        if ($currentRound->isEmpty()) {
-            return redirect()->back()->with('error', 'ไม่พบข้อมูลรอบการบรรจุ');
-        }
-
         // สร้างข้อมูลสำหรับรอบถัดไป
-        $subjects = Subject::getSubjects();
-        $education_area = Admin::getEducationArea();
-
-        // ข้อมูลพื้นฐานสำหรับรอบใหม่
         $nextRoundData = [
             'round_year' => $currentRound[0]->round_year,
             'education_area_id' => $currentRound[0]->education_area_id,
@@ -291,10 +294,14 @@ class AdminController extends Controller
             $nextRoundData['items'][] = [
                 'subject_id' => $item->subject_id,
                 'subject_group' => $item->subject_group,
-                'passed_exam' => $item->remaining, // ใช้จำนวนคงเหลือจากรอบก่อนหน้า
-                'previous_remaining' => $item->remaining, // เก็บข้อมูลคงเหลือจากรอบก่อน
+                'passed_exam' => $item->passed_exam, // จำนวนผู้สอบผ่านทั้งหมด
+                'total_appointed' => $item->total_appointed, // ยอดบรรจุสะสม
+                'remaining' => $item->passed_exam - $item->total_appointed, // คงเหลือ
             ];
         }
+
+        $subjects = Subject::getSubjects();
+        $education_area = Admin::getEducationArea();
 
         return view('admin.create_next_round', compact('nextRoundData', 'subjects', 'education_area'));
     }

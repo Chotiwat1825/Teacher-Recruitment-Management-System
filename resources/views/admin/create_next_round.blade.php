@@ -63,10 +63,18 @@
                             </div>
                             <div class="col-md-2">
                                 <div class="form-group">
-                                    <label>คงเหลือจากรอบก่อน</label>
+                                    <label>ผู้สอบผ่านขึ้นบัญชี</label>
                                     <input type="number" class="form-control" 
-                                        value="{{ $item['previous_remaining'] }}" 
+                                        value="{{ $item['passed_exam'] }}" 
                                         name="items[{{ $index }}][passed_exam]" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>บรรจุสะสม</label>
+                                    <input type="number" class="form-control appointed-display" 
+                                        value="{{ $item['total_appointed'] }}" 
+                                        readonly>
                                 </div>
                             </div>
                             <div class="col-md-2">
@@ -74,7 +82,19 @@
                                     <label>บรรจุรอบนี้</label>
                                     <input type="number" class="form-control vacancy-input" 
                                         name="items[{{ $index }}][vacancy]" 
-                                        max="{{ $item['previous_remaining'] }}" required>
+                                        data-passed="{{ $item['passed_exam'] }}"
+                                        data-appointed="{{ $item['total_appointed'] }}"
+                                        min="0"
+                                        max="{{ $item['remaining'] }}"
+                                        required>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>คงเหลือ</label>
+                                    <input type="text" class="form-control remaining-display" 
+                                        value="{{ $item['remaining'] }}" 
+                                        readonly>
                                 </div>
                             </div>
                             <div class="col-md-2">
@@ -100,12 +120,17 @@
 @section('js')
 <script>
 $(document).ready(function() {
-    // ตรวจสอบจำนวนบรรจุไม่เกินจำนวนคงเหลือ
+    // อัพเดทจำนวนคงเหลือเมื่อกรอกจำนวนบรรจุ
     $('.vacancy-input').on('input', function() {
-        let max = parseInt($(this).attr('max'));
-        let value = parseInt($(this).val());
-        
-        if (value > max) {
+        let $row = $(this).closest('.subject-item');
+        let passed = parseInt($(this).data('passed'));
+        let appointed = parseInt($(this).data('appointed'));
+        let vacancy = parseInt($(this).val()) || 0;
+        let max = passed - appointed;
+
+        // ตรวจสอบไม่ให้เกินจำนวนคงเหลือ
+        if (vacancy > max) {
+            vacancy = max;
             $(this).val(max);
             Swal.fire({
                 icon: 'warning',
@@ -114,6 +139,10 @@ $(document).ready(function() {
                 confirmButtonText: 'ตกลง'
             });
         }
+
+        // อัพเดทจำนวนคงเหลือ
+        let remaining = max - vacancy;
+        $row.find('.remaining-display').val(remaining);
     });
 });
 </script>
