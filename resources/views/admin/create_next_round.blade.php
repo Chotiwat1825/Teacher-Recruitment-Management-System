@@ -24,7 +24,11 @@
                     <div class="col-md-3">
                         <div class="form-group">
                             <label for="appointment_date">ประกาศวันที่</label>
-                            <input type="date" class="form-control" id="appointment_date" name="created_at" required>
+                            <input type="date" class="form-control" id="appointment_date" name="created_at"
+                                value="{{ old('created_at') }}">
+                            @error('created_at')
+                                <span class="text-danger">{{ $message }}</span>
+                            @enderror
                         </div>
                     </div>
                     <div class="col-md-4">
@@ -94,7 +98,11 @@
                                             name="items[{{ $index }}][vacancy]"
                                             data-passed="{{ $item['passed_exam'] }}"
                                             data-appointed="{{ $item['total_appointed'] }}" min="0"
-                                            max="{{ $item['remaining'] }}" required>
+                                            max="{{ $item['remaining'] }}"
+                                            value="{{ old('items.' . $index . '.vacancy') }}">
+                                        @error('items.' . $index . '.vacancy')
+                                            <span class="text-danger">{{ $message }}</span>
+                                        @enderror
                                     </div>
                                 </div>
                                 <div class="col-md-2">

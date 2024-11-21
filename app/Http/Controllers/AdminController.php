@@ -51,10 +51,19 @@ class AdminController extends Controller
     }
     public function education_area_update(Request $request)
     {
-        $validate = $request->validate([
-            'id' => 'required|numeric',
-            'name' => 'required|string|max:255',
-        ]);
+        $validate = $request->validate(
+            [
+                'id' => 'required|numeric',
+                'name' => 'required|string|max:255',
+            ],
+            [
+                'id.required' => 'กรุณาระบุรหัสสถานศึกษา',
+                'id.numeric' => 'รหัสสถานศึกษาต้องเป็นตัวเลข',
+                'name.required' => 'กรุณาระบุชื่อ',
+                'name.string' => 'ชื่อต้องเป็นตัวอักษร',
+                'name.max' => 'ชื่อต้องมีอย่างน้อย 255 ตัวอักษร',
+            ],
+        );
 
         $education_area = Admin::where('id', $request->id)->update(['name_education' => $request->name]);
 
@@ -62,9 +71,15 @@ class AdminController extends Controller
     }
     public function education_area_delete(Request $request)
     {
-        $validate = $request->validate([
-            'id' => 'required|numeric',
-        ]);
+        $validate = $request->validate(
+            [
+                'id' => 'required|numeric',
+            ],
+            [
+                'id.required' => 'กรุณาระบุรหัสสถานศึกษา',
+                'id.numeric' => 'รหัสสถานศึกษาต้องเป็นตัวเลข',
+            ],
+        );
 
         $education_area = Admin::where('id', $request->id)->delete();
 
@@ -93,6 +108,13 @@ class AdminController extends Controller
                 'created_at' => 'required|date|after:1957-01-01|before:2100-12-31', // ตรวจสอบวันที่ให้อยู่ในช่วง พ.ศ. 2500-2643
             ],
             [
+                'round_year.required' => 'กรุณาระบุปีการบรรจุ',
+                'education_area_id.required' => 'กรุณาระบุรหัสสถานศึกษา',
+                'round_number.required' => 'กรุณาระบุรอบการบรรจุ',
+                'items.*.subject_id.exists' => 'วิชาเอกที่ระบุไม่มีอยู่ในระบบ',
+                'items.*.passed_exam.min' => 'จำนวนผู้สอบผ่านขึ้นบัญชีต้องเป็นตัวเลข',
+                'items.*.vacancy.min' => 'จำนวนที่บรรจุต้องเป็นตัวเลข',
+                'items.*.vacancy.required' => 'กรุณาระบุจำนวนที่บรรจุ',
                 'created_at.required' => 'กรุณาระบุวันที่ประกาศ',
                 'created_at.date' => 'วันที่ต้องเป็นวันที่',
                 'created_at.after' => 'วันที่ต้องเป็น คริตศักราช',
@@ -111,7 +133,7 @@ class AdminController extends Controller
                     ->where([
                         'round_year' => $request->round_year,
                         'education_area_id' => $request->education_area_id,
-                        'subject_id' => $item['subject_id']
+                        'subject_id' => $item['subject_id'],
                     ])
                     ->where('round_number', '<', $request->round_number)
                     ->sum('vacancy');
@@ -149,41 +171,31 @@ class AdminController extends Controller
     {
         try {
             // ดึงข้อมูลรอบล่าสุด
-            $latestRound = DB::table('subjects_rounds')
-                ->where('round_year', $roundYear)
-                ->where('education_area_id', $educationAreaId)
-                ->max('round_number');
+            $latestRound = DB::table('subjects_rounds')->where('round_year', $roundYear)->where('education_area_id', $educationAreaId)->max('round_number');
 
             // ดึงข้อมูลรอบปัจจุบัน
             $round = DB::table('subjects_rounds AS sr')
-                ->select(
-                    'sr.*',
-                    'subjects.subject_group',
-                    'education_area.name_education'
-                )
+                ->select('sr.*', 'subjects.subject_group', 'education_area.name_education')
                 ->join('subjects', 'sr.subject_id', '=', 'subjects.id')
                 ->join('education_area', 'sr.education_area_id', '=', 'education_area.id')
                 ->where([
                     'sr.round_year' => $roundYear,
                     'sr.education_area_id' => $educationAreaId,
-                    'sr.round_number' => $roundNumber
+                    'sr.round_number' => $roundNumber,
                 ])
                 ->get();
 
             if ($round->isEmpty()) {
-                return redirect()->route('admin.subjects.rounds.index')
-                    ->with('error', 'ไม่พบข้อมูลการบรรจุ');
+                return redirect()->route('admin.subjects.rounds.index')->with('error', 'ไม่พบข้อมูลการบรรจุ');
             }
 
             // ส่งข้อมูลไปยังวิว
             return view('admin.subjects_rounds_show', [
                 'round' => $round,
-                'latestRound' => $latestRound ?? $roundNumber // ถ้าไม่มี latestRound ให้ใช้ roundNumber แทน
+                'latestRound' => $latestRound ?? $roundNumber, // ถ้าไม่มี latestRound ให้ใช้ roundNumber แทน
             ]);
-
         } catch (\Exception $e) {
-            return redirect()->route('admin.subjects.rounds.index')
-                ->with('error', 'เกิดข้อผิดพลาดในการดึงข้อมูล');
+            return redirect()->route('admin.subjects.rounds.index')->with('error', 'เกิดข้อผิดพลาดในการดึงข้อมูล');
         }
     }
 
@@ -232,18 +244,25 @@ class AdminController extends Controller
     public function subjects_rounds_update(Request $request)
     {
         // Validate
-        $request->validate([
-            'round_year' => 'required|integer',
-            'education_area_id' => 'required|integer',
-            'round_number' => 'required|integer',
-            'items' => 'required|array',
-            'items.*.id' => 'required|integer|exists:subjects_rounds,id',
-            'items.*.subject_id' => 'required|integer|exists:subjects,id',
-            'items.*.passed_exam' => 'required|integer|min:0',
-            'items.*.vacancy' => 'required|integer|min:0',
-            'items.*.notes' => 'nullable|string',
-            'created_at' => 'required|date',
-        ]);
+        $request->validate(
+            [
+                'round_year' => 'required|integer',
+                'education_area_id' => 'required|integer',
+                'round_number' => 'required|integer',
+                'items' => 'required|array',
+                'items.*.id' => 'required|integer|exists:subjects_rounds,id',
+                'items.*.subject_id' => 'required|integer|exists:subjects,id',
+                'items.*.passed_exam' => 'required|integer|min:0',
+                'items.*.vacancy' => 'required|integer|min:0',
+                'items.*.notes' => 'nullable|string',
+                'created_at' => 'required|date',
+            ],
+            [
+                'round_year.required' => 'กรุณาระบุปีการบรรจุ',
+                'education_area_id.required' => 'กรุณาระบุรหัสสถานศึกษา',
+                'round_number.required' => 'กรุณาระบุรอบการบรรจุ',
+            ],
+        );
 
         // อัพเดทข้อมูลแต่ละรายการ
         foreach ($request->items as $item) {
@@ -334,10 +353,18 @@ class AdminController extends Controller
     }
     public function changePassword_update(Request $request)
     {
-        $request->validate([
-            'current_password' => ['required', new MatchOldPassword()],
-            'new_password' => ['required', 'string', 'min:8', 'confirmed'],
-        ]);
+        $request->validate(
+            [
+                'current_password' => ['required', new MatchOldPassword()],
+                'new_password' => ['required', 'string', 'min:8', 'confirmed'],
+            ],
+            [
+                'current_password.required' => 'กรุณาระบุรหัสผ่านปัจจุบัน',
+                'new_password.required' => 'กรุณาระบุรหัสผ่านใหม่',
+                'new_password.min' => 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร',
+                'new_password.confirmed' => 'รหัสผ่านใหม่ไม่ตรงกับรหัสผ่านที่ระบุ',
+            ],
+        );
 
         auth()
             ->user()
@@ -357,11 +384,19 @@ class AdminController extends Controller
     {
         $user = Auth::user();
 
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'current_password' => 'required_with:new_password',
-            'new_password' => 'nullable|min:8|confirmed',
-        ]);
+        $request->validate(
+            [
+                'name' => 'required|string|max:255',
+                'current_password' => 'required_with:new_password',
+                'new_password' => 'nullable|min:8|confirmed',
+            ],
+            [
+                'name.required' => 'กรุณาระบุชื่อ',
+                'current_password.required_with' => 'กรุณาระบุรหัสผ่านปัจจุบัน',
+                'new_password.min' => 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร',
+                'new_password.confirmed' => 'รหัสผ่านใหม่ไม่ตรงกับรหัสผ่านที่ระบุ',
+            ],
+        );
 
         if ($request->filled('current_password')) {
             if (!Hash::check($request->current_password, $user->password)) {
