@@ -6,9 +6,19 @@
     <div class="d-flex justify-content-between">
         <h1>รายละเอียดข้อมูลการบรรจุ</h1>
         <div>
-            <button type="button" class="btn btn-success" id="nextRoundBtn">
-                <i class="fas fa-plus"></i> เพิ่มรอบการบรรจุ
-            </button>
+            @if($round[0]->round_number == $latestRound)
+                <button type="button" class="btn btn-success" id="nextRoundBtn">
+                    <i class="fas fa-plus"></i> เพิ่มรอบการบรรจุ
+                </button>
+            @else
+                <a href="{{ route('admin.subjects.rounds.show', [
+                    'roundYear' => $round[0]->round_year,
+                    'educationAreaId' => $round[0]->education_area_id,
+                    'roundNumber' => $latestRound
+                ]) }}" class="btn btn-success">
+                    <i class="fas fa-arrow-right"></i> ไปที่รอบล่าสุด (รอบที่ {{ $latestRound }})
+                </a>
+            @endif
             <a href="{{ route('admin.subjects.rounds.edit', [
                 'roundYear' => $round[0]->round_year,
                 'educationAreaId' => $round[0]->education_area_id,
@@ -176,7 +186,7 @@
             $('#nextRoundBtn').click(function() {
                 Swal.fire({
                     title: 'ยืนยันการเพิ่มรอบการบรรจุ?',
-                    text: "ต้องการเพิ่มรอบการบรรจุจากรอบที่ {{ $round[0]->round_number }} เป็นรอบที่ {{ $round[0]->round_number + 1 }} ใช่หรือไม่?",
+                    text: "ต้องการเพิ่มรอบการบรรจุจากรอบที่ {{ $latestRound }} เป็นรอบที่ {{ $latestRound + 1 }} ใช่หรือไม่?",
                     icon: 'question',
                     showCancelButton: true,
                     confirmButtonColor: '#3085d6',
@@ -185,12 +195,11 @@
                     cancelButtonText: 'ยกเลิก'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        window.location.href =
-                            "{{ route('admin.subjects.rounds.next', [
-                                'year' => $round[0]->round_year,
-                                'area' => $round[0]->education_area_id,
-                                'round' => $round[0]->round_number,
-                            ]) }}";
+                        window.location.href = "{{ route('admin.subjects.rounds.next', [
+                            'year' => $round[0]->round_year,
+                            'area' => $round[0]->education_area_id,
+                            'round' => $latestRound
+                        ]) }}";
                     }
                 });
             });

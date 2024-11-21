@@ -104,6 +104,7 @@
                                             name="items[{{ $index }}][notes]">
                                     </div>
                                 </div>
+
                             </div>
                         </div>
                     @endforeach

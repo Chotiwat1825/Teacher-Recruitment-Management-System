@@ -147,37 +147,44 @@ class AdminController extends Controller
 
     public function subjects_rounds_show($roundYear, $educationAreaId, $roundNumber)
     {
-        // ดึงข้อมูลรอบปัจจุบัน
-        $round = DB::table('subjects_rounds')
-            ->select(
-                'subjects_rounds.*',
-                'subjects.subject_group',
-                'education_area.name_education',
-                DB::raw('(
-                    SELECT SUM(sr2.vacancy)
-                    FROM subjects_rounds sr2
-                    WHERE sr2.round_year = subjects_rounds.round_year
-                    AND sr2.education_area_id = subjects_rounds.education_area_id
-                    AND sr2.subject_id = subjects_rounds.subject_id
-                    AND sr2.round_number <= subjects_rounds.round_number
-                ) as total_appointed'), // คำนวณยอดบรรจุสะสม
-            )
-            ->join('subjects', 'subjects_rounds.subject_id', '=', 'subjects.id')
-            ->join('education_area', 'subjects_rounds.education_area_id', '=', 'education_area.id')
-            ->where([
-                'subjects_rounds.round_year' => $roundYear,
-                'subjects_rounds.education_area_id' => $educationAreaId,
-                'subjects_rounds.round_number' => $roundNumber,
-            ])
-            ->get();
+        try {
+            // ดึงข้อมูลรอบล่าสุด
+            $latestRound = DB::table('subjects_rounds')
+                ->where('round_year', $roundYear)
+                ->where('education_area_id', $educationAreaId)
+                ->max('round_number');
 
-        // ปรับปรุงข้อมูล appointed และ remaining
-        foreach ($round as $item) {
-            $item->appointed = $item->total_appointed; // ใช้ยอดสะสมแทน
-            $item->remaining = $item->passed_exam - $item->total_appointed; // คำนวณยอดคงเหลือใหม่
+            // ดึงข้อมูลรอบปัจจุบัน
+            $round = DB::table('subjects_rounds AS sr')
+                ->select(
+                    'sr.*',
+                    'subjects.subject_group',
+                    'education_area.name_education'
+                )
+                ->join('subjects', 'sr.subject_id', '=', 'subjects.id')
+                ->join('education_area', 'sr.education_area_id', '=', 'education_area.id')
+                ->where([
+                    'sr.round_year' => $roundYear,
+                    'sr.education_area_id' => $educationAreaId,
+                    'sr.round_number' => $roundNumber
+                ])
+                ->get();
+
+            if ($round->isEmpty()) {
+                return redirect()->route('admin.subjects.rounds.index')
+                    ->with('error', 'ไม่พบข้อมูลการบรรจุ');
+            }
+
+            // ส่งข้อมูลไปยังวิว
+            return view('admin.subjects_rounds_show', [
+                'round' => $round,
+                'latestRound' => $latestRound ?? $roundNumber // ถ้าไม่มี latestRound ให้ใช้ roundNumber แทน
+            ]);
+
+        } catch (\Exception $e) {
+            return redirect()->route('admin.subjects.rounds.index')
+                ->with('error', 'เกิดข้อผิดพลาดในการดึงข้อมูล');
         }
-
-        return view('admin.subjects_rounds_show', compact('round'));
     }
 
     public function subjects_rounds_delete($roundYear, $educationAreaId, $roundNumber)
