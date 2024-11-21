@@ -132,10 +132,34 @@ class AdminController extends Controller
 
     public function subjects_rounds_show($roundYear, $educationAreaId, $roundNumber)
     {
-        $round = DB::table('subjects_rounds')->select('subjects_rounds.*', 'subjects.subject_group', 'education_area.name_education')->join('subjects', 'subjects_rounds.subject_id', '=', 'subjects.id')->join('education_area', 'subjects_rounds.education_area_id', '=', 'education_area.id')->where('round_year', $roundYear)->where('education_area_id', $educationAreaId)->where('round_number', $roundNumber)->get();
-        //@dd($round);
-        if ($round->isEmpty()) {
-            return redirect()->route('admin.subjects.rounds.index')->with('error', 'ไม่พบข้อมูลการบรรจุ');
+        // ดึงข้อมูลรอบปัจจุบัน
+        $round = DB::table('subjects_rounds')
+            ->select(
+                'subjects_rounds.*',
+                'subjects.subject_group',
+                'education_area.name_education',
+                DB::raw('(
+                    SELECT SUM(sr2.vacancy)
+                    FROM subjects_rounds sr2
+                    WHERE sr2.round_year = subjects_rounds.round_year
+                    AND sr2.education_area_id = subjects_rounds.education_area_id
+                    AND sr2.subject_id = subjects_rounds.subject_id
+                    AND sr2.round_number <= subjects_rounds.round_number
+                ) as total_appointed') // คำนวณยอดบรรจุสะสม
+            )
+            ->join('subjects', 'subjects_rounds.subject_id', '=', 'subjects.id')
+            ->join('education_area', 'subjects_rounds.education_area_id', '=', 'education_area.id')
+            ->where([
+                'subjects_rounds.round_year' => $roundYear,
+                'subjects_rounds.education_area_id' => $educationAreaId,
+                'subjects_rounds.round_number' => $roundNumber
+            ])
+            ->get();
+
+        // ปรับปรุงข้อมูล appointed และ remaining
+        foreach ($round as $item) {
+            $item->appointed = $item->total_appointed; // ใช้ยอดสะสมแทน
+            $item->remaining = $item->passed_exam - $item->total_appointed; // คำนวณยอดคงเหลือใหม่
         }
 
         return view('admin.subjects_rounds_show', compact('round'));
