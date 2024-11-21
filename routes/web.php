@@ -28,10 +28,10 @@ Route::prefix('admin')
         Route::post('/rounds/create', [AdminController::class, 'subjects_rounds_create'])->name('subjects.rounds.create');
 
         Route::get('/subjects/rounds', [AdminController::class, 'subjects_rounds_index'])->name('subjects.rounds.index');
-        Route::get('/subjects/rounds/{roundYear}', [AdminController::class, 'subjects_rounds_show'])->name('subjects.rounds.show');
-        Route::get('/subjects/rounds/{roundYear}/delete', [AdminController::class, 'subjects_rounds_delete'])->name('subjects.rounds.delete');
+        Route::get('/subjects/rounds/{roundYear}/{educationAreaId}/{roundNumber}/', [AdminController::class, 'subjects_rounds_show'])->name('subjects.rounds.show');
+        Route::get('/subjects/rounds/{roundYear}/{educationAreaId}/{roundNumber}/delete', [AdminController::class, 'subjects_rounds_delete'])->name('subjects.rounds.delete');
 
-        Route::get('/rounds/{id}/edit', [AdminController::class, 'subjects_rounds_edit'])->name('subjects.rounds.edit');
+        Route::get('/rounds/{roundYear}/{educationAreaId}/{roundNumber}/edit', [AdminController::class, 'subjects_rounds_edit'])->name('subjects.rounds.edit');
 
         Route::put('/rounds/update', [AdminController::class, 'subjects_rounds_update'])->name('subjects.rounds.update');
 

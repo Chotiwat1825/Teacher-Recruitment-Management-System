@@ -80,17 +80,25 @@ class AdminController extends Controller
     public function subjects_rounds_create(Request $request)
     {
         // Validate the request
-        $request->validate([
-            'round_year' => 'required|integer',
-            'education_area_id' => 'required|integer', //|exists:education_area,id'
-            'round_number' => 'required|integer',
-            'items' => 'required|array',
-            'items.*.subject_id' => 'required|integer|exists:subjects,id', //|exists:subjects,id
-            'items.*.passed_exam' => 'required|integer|min:0', // ผู้สอบผ่านขึ้นบัญชี
-            'items.*.vacancy' => 'required|integer|min:0', // จำนวนที่บรรจุ
-            'items.*.notes' => 'nullable|string',
-            'created_at' => 'required|date',
-        ]);
+        $request->validate(
+            [
+                'round_year' => 'required|integer',
+                'education_area_id' => 'required|integer', //|exists:education_area,id'
+                'round_number' => 'required|integer',
+                'items' => 'required|array',
+                'items.*.subject_id' => 'required|integer|exists:subjects,id', //|exists:subjects,id
+                'items.*.passed_exam' => 'required|integer|min:0', // ผู้สอบผ่านขึ้นบัญชี
+                'items.*.vacancy' => 'required|integer|min:0', // จำนวนที่บรรจุ
+                'items.*.notes' => 'nullable|string',
+                'created_at' => 'required|date|after:1957-01-01|before:2100-12-31', // ตรวจสอบวันที่ให้อยู่ในช่วง พ.ศ. 2500-2643
+            ],
+            [
+                'created_at.required' => 'กรุณาระบุวันที่ประกาศ',
+                'created_at.date' => 'วันที่ต้องเป็นวันที่',
+                'created_at.after' => 'วันที่ต้องเป็น คริตศักราช',
+                'created_at.before' => 'วันที่ต้องเป็น คริตศักราช',
+            ],
+        );
 
         // Process each subject item
         foreach ($request->items as $item) {
@@ -122,10 +130,10 @@ class AdminController extends Controller
         return view('admin.subjects_rounds_index', compact('rounds'));
     }
 
-    public function subjects_rounds_show($roundYear)
+    public function subjects_rounds_show($roundYear, $educationAreaId, $roundNumber)
     {
-        $round = DB::table('subjects_rounds')->select('subjects_rounds.*', 'subjects.subject_group', 'education_area.name_education')->join('subjects', 'subjects_rounds.subject_id', '=', 'subjects.id')->join('education_area', 'subjects_rounds.education_area_id', '=', 'education_area.id')->where('round_year', $roundYear)->get();
-
+        $round = DB::table('subjects_rounds')->select('subjects_rounds.*', 'subjects.subject_group', 'education_area.name_education')->join('subjects', 'subjects_rounds.subject_id', '=', 'subjects.id')->join('education_area', 'subjects_rounds.education_area_id', '=', 'education_area.id')->where('round_year', $roundYear)->where('education_area_id', $educationAreaId)->where('round_number', $roundNumber)->get();
+        //@dd($round);
         if ($round->isEmpty()) {
             return redirect()->route('admin.subjects.rounds.index')->with('error', 'ไม่พบข้อมูลการบรรจุ');
         }
@@ -133,10 +141,22 @@ class AdminController extends Controller
         return view('admin.subjects_rounds_show', compact('round'));
     }
 
-    public function subjects_rounds_delete($roundYear)
+    public function subjects_rounds_delete($roundYear, $educationAreaId, $roundNumber)
     {
+        $validate = $request->validate(
+            [
+                'round_year' => 'required|integer',
+                'education_area_id' => 'required|integer',
+                'round_number' => 'required|integer',
+            ],
+            [
+                'round_year.required' => 'กรุณาระบุปีการบรรจุ',
+                'education_area_id.required' => 'กรุณาระบุรหัสสถานศึกษา',
+                'round_number.required' => 'กรุณาระบุรอบการบรรจุ',
+            ],
+        );
         try {
-            DB::table('subjects_rounds')->where('round_year', $roundYear)->delete();
+            DB::table('subjects_rounds')->where('round_year', $roundYear)->where('education_area_id', $educationAreaId)->where('round_number', $roundNumber)->delete();
 
             return redirect()->route('admin.subjects.rounds.index')->with('success', 'ลบข้อมูลการบรรจุเรียบร้อยแล้ว');
         } catch (\Exception $e) {
@@ -144,22 +164,20 @@ class AdminController extends Controller
         }
     }
     // เพิ่มเมธอดสำหรับแสดงฟอร์มแก้ไข
-    public function subjects_rounds_edit($id)
+    public function subjects_rounds_edit($roundYear, $educationAreaId, $roundNumber)
     {
-        
         $subjects = Subject::getSubjects();
         $education_area = Admin::getEducationArea();
 
         // ดึงข้อมูลรอบการบรรจุ
-        $round = DB::table('subjects_rounds')->where('id', $id)->first();
+        $round = DB::table('subjects_rounds')->where('round_year', $roundYear)->where('education_area_id', $educationAreaId)->where('round_number', $roundNumber)->first();
+
+        if (!$round) {
+            return redirect()->route('admin.subjects.rounds.index')->with('error', 'ไม่พบข้อมูลการบรรจุ');
+        }
 
         // ดึงข้อมูลวิชาเอกทั้งหมดในรอบนี้
-
-        $items = DB::table('subjects_rounds')
-            ->where('round_year', $round->round_year)
-            ->where('education_area_id', $round->education_area_id)
-            ->where('round_number', $round->round_number)
-            ->get();
+        $items = DB::table('subjects_rounds')->where('round_year', $roundYear)->where('education_area_id', $educationAreaId)->where('round_number', $roundNumber)->get();
 
         return view('admin.edit_subjects', compact('subjects', 'education_area', 'round', 'items'));
     }
@@ -226,7 +244,7 @@ class AdminController extends Controller
                 'round_number' => $round,
             ])
             ->get();
-        
+
         // ตรวจสอบว่ามีข้อมูลหรือไม่
         if ($currentRound->isEmpty()) {
             return redirect()->back()->with('error', 'ไม่พบข้อมูลรอบการบรรจุ');

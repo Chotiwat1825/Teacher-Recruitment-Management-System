@@ -45,16 +45,24 @@
                                 <td class="text-center">{{ $round->total_remaining }}</td>
                                 <td class="text-center">
                                     <div class="btn-group">
-                                        <a href="{{ route('admin.subjects.rounds.show', $round->round_year) }}"
+                                        <a href="{{ route('admin.subjects.rounds.show', [
+                                            'roundYear' => $round->round_year,
+                                            'educationAreaId' => $round->education_area_id,
+                                            'roundNumber' => $round->round_number,
+                                        ]) }}"
                                             class="btn btn-info btn-sm" title="ดูรายละเอียด">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        <a href="{{ route('admin.subjects.rounds.edit', $round->round_year) }}"
+                                        <a href="{{ route('admin.subjects.rounds.edit', [
+                                            'roundYear' => $round->round_year,
+                                            'educationAreaId' => $round->education_area_id,
+                                            'roundNumber' => $round->round_number,
+                                        ]) }}"
                                             class="btn btn-warning btn-sm" title="แก้ไข">
                                             <i class="fas fa-edit"></i>
                                         </a>
                                         <button type="button" class="btn btn-danger btn-sm delete-round"
-                                            data-id="{{ $round->round_year }}" title="ลบ">
+                                            data-id="{{ $round->round_year }}/{{ $round->education_area_id }}/{{ $round->round_number }}" title="ลบ">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </div>

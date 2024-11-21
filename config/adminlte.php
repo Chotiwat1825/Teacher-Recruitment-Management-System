@@ -314,11 +314,13 @@ return [
             'type' => 'sidebar-menu-search',
             'text' => 'search',
         ],
+        ['header' => 'Dashboard'],
         [
-            'text' => 'blog',
-            'url' => 'admin/blog',
-            'can' => 'manage-blog',
+            'text' => 'Dashboard',
+            'url' => 'admin',
+            'icon' => 'fas fa-fw fa-home',
         ],
+        ['header' => 'ข้อมูลการบรรจุ'],
         [
             'text' => 'เขตพื้นที่การศึกษา',
             'url' => 'admin/show_education_area',
