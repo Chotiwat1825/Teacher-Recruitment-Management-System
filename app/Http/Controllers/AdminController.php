@@ -100,10 +100,25 @@ class AdminController extends Controller
             ],
         );
 
-        // Process each subject item
         foreach ($request->items as $item) {
-            $appointed = $item['vacancy']; // รับการบรรจุแล้ว
-            $remaining = $item['passed_exam'] - $item['vacancy']; // คงเหลือ
+            // ตรวจสอบว่าเป็นรอบแรก
+            if ($request->round_number == 1) {
+                $appointed = 0; // รอบแรก appointed = 0
+                $remaining = $item['passed_exam'] - $item['vacancy'];
+            } else {
+                // ดึงข้อมูลการบรรจุสะสมจากรอบก่อนหน้า
+                $previousAppointed = DB::table('subjects_rounds')
+                    ->where([
+                        'round_year' => $request->round_year,
+                        'education_area_id' => $request->education_area_id,
+                        'subject_id' => $item['subject_id']
+                    ])
+                    ->where('round_number', '<', $request->round_number)
+                    ->sum('vacancy');
+
+                $appointed = $previousAppointed + $item['vacancy'];
+                $remaining = $item['passed_exam'] - $appointed;
+            }
 
             DB::table('subjects_rounds')->insert([
                 'round_year' => $request->round_year,

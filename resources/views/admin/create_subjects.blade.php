@@ -100,30 +100,30 @@
                                     <div class="col-md-2">
                                         <div class="form-group">
                                             <label>ผู้สอบผ่านขึ้นบัญชี</label>
-                                            <input type="number" class="form-control"
+                                            <input type="number" class="form-control passed-exam"
                                                 name="items[{{ $i }}][passed_exam]"
-                                                value="{{ $item['passed_exam'] }}" required>
-                                            @error("items.$i.passed_exam")
-                                                <span class="text-danger">{{ $message }}</span>
-                                            @enderror
+                                                value="{{ old("items.$i.passed_exam") }}" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="form-group">
+                                            <label>บรรจุสะสม</label>
+                                            <input type="text" class="form-control appointed-display" value="0"
+                                                readonly>
                                         </div>
                                     </div>
                                     <div class="col-md-2">
                                         <div class="form-group">
                                             <label>บรรจุรอบนี้</label>
-                                            <input type="number" class="form-control"
-                                                name="items[{{ $i }}][vacancy]" value="{{ $item['vacancy'] }}"
-                                                required>
-                                            @error("items.$i.vacancy")
-                                                <span class="text-danger">{{ $message }}</span>
-                                            @enderror
+                                            <input type="number" class="form-control vacancy-input"
+                                                name="items[{{ $i }}][vacancy]"
+                                                value="{{ old("items.$i.vacancy") }}" required>
                                         </div>
                                     </div>
                                     <div class="col-md-2">
                                         <div class="form-group">
-                                            <label>หมายเหตุ</label>
-                                            <input type="text" class="form-control"
-                                                name="items[{{ $i }}][notes]" value="{{ $item['notes'] }}">
+                                            <label>คงเหลือ</label>
+                                            <input type="text" class="form-control remaining-display" readonly>
                                         </div>
                                     </div>
                                     <div class="col-md-1 d-flex align-items-end">
@@ -164,6 +164,13 @@
                                 </div>
                                 <div class="col-md-2">
                                     <div class="form-group">
+                                        <label>บรรจุสะสม</label>
+                                        <input type="text" class="form-control appointed-display" value="0"
+                                            readonly>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="form-group">
                                         <label>บรรจุรอบนี้</label>
                                         <input type="number" class="form-control" name="items[0][vacancy]"
                                             value="{{ old('items.0.vacancy') }}" required>
@@ -171,9 +178,8 @@
                                 </div>
                                 <div class="col-md-2">
                                     <div class="form-group">
-                                        <label>หมายเหตุ</label>
-                                        <input type="text" class="form-control" name="items[0][notes]"
-                                            value="{{ old('items.0.notes') }}">
+                                        <label>คงเหลือ</label>
+                                        <input type="text" class="form-control remaining-display" readonly>
                                     </div>
                                 </div>
                                 <div class="col-md-1 d-flex align-items-end">
@@ -238,12 +244,51 @@
                 checkDuplicateSubject(this);
             });
 
+            // ตรวจสอบรอบการบรรจุเมื่อมีการเปลี่ยนแปลง
+            $('#round_number').on('change', function() {
+                let roundNumber = parseInt($(this).val()) || 0;
+                if (roundNumber === 1) {
+                    // ถ้าเป็นรอบ 1 ให้กำหนด appointed = 0
+                    $('.appointed-display').val(0);
+                    // อัพเดทการคำนวณทุกรายการ
+                    $('.vacancy-input').trigger('input');
+                }
+            });
+
+            // อัพเดทการคำนวณเมื่อมีการเปลี่ยนแปลงค่า
+            $(document).on('input', '.passed-exam, .vacancy-input', function() {
+                let $row = $(this).closest('.subject-item');
+                let passed = parseInt($row.find('.passed-exam').val()) || 0;
+                let vacancy = parseInt($row.find('.vacancy-input').val()) || 0;
+                let roundNumber = parseInt($('#round_number').val()) || 0;
+                
+                // กำหนด appointed ตามรอบ
+                let appointed = roundNumber === 1 ? 0 : parseInt($row.find('.appointed-display').val()) || 0;
+
+                // ตรวจสอบไม่ให้บรรจุเกินจำนวนคงเหลือ
+                let maxVacancy = passed - appointed;
+                if (vacancy > maxVacancy) {
+                    vacancy = maxVacancy;
+                    $row.find('.vacancy-input').val(maxVacancy);
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'แจ้งเตือน',
+                        text: 'จำนวนบรรจุต้องไม่เกินจำนวนคงเหลือ',
+                        confirmButtonText: 'ตกลง'
+                    });
+                }
+
+                // คำนวณจำนวนคงเหลือ
+                let remaining = passed - (appointed + vacancy);
+                $row.find('.remaining-display').val(remaining);
+            });
+
             // เพิ่มรายการใหม่
             $('#add-item').click(function() {
-                itemCount++;
+                let roundNumber = parseInt($('#round_number').val()) || 0;
                 let template = $('.subject-item').first().clone();
-
-                // อัพเดต name attributes และเคลียร์ค่า
+                
+                // รีเซ็ตค่าและอัพเดต name attributes
                 template.find('select, input').each(function() {
                     let name = $(this).attr('name');
                     if (name) {
@@ -252,44 +297,12 @@
                     $(this).val('');
                 });
 
-                // ลบข้อความ error ถ้ามี
-                template.find('.text-danger').remove();
-
-                // แสดงปุ่มลบ
-                template.find('.remove-item').show();
-
+                // กำหนดค่า appointed ตามรอบ
+                template.find('.appointed-display').val(roundNumber === 1 ? 0 : '');
+                
                 $('#subject-items').append(template);
-
-                // อัพเดตตัวเลือกที่ถูกเลือกไปแล้ว
-                updateAvailableOptions();
+                itemCount++;
             });
-
-            // ฟังก์ชันอัพเดตตัวเลือกที่มี
-            function updateAvailableOptions() {
-                let selectedValues = [];
-
-                // รวบรวมค่าที่ถูกเลือกแล้ว
-                $('select[name*="[subject_id]"]').each(function() {
-                    let value = $(this).val();
-                    if (value) {
-                        selectedValues.push(value);
-                    }
-                });
-
-                // อัพเดตตัวเลือกในทุก select
-                $('select[name*="[subject_id]"]').each(function() {
-                    let currentValue = $(this).val();
-
-                    // เก็บตัวเลือกที่เลือกไว้ปัจจุบัน
-                    $(this).find('option').each(function() {
-                        let optionValue = $(this).val();
-                        if (optionValue && optionValue !== currentValue) {
-                            // ซ่อนตัวเลือกที่ถูกเลือกไปแล้ว
-                            $(this).prop('disabled', selectedValues.includes(optionValue));
-                        }
-                    });
-                });
-            }
 
             // ลบรายการ
             $(document).on('click', '.remove-item', function() {
@@ -344,6 +357,31 @@
 
             // เริ่มต้นอัพเดตตัวเลือกที่มี
             updateAvailableOptions();
+
+            // เพิ่มการตรวจสอบก่อนส่งฟอร์ม
+            $('form').on('submit', function(e) {
+                let valid = true;
+                $('.subject-item').each(function() {
+                    let passed = parseInt($(this).find('.passed-exam').val()) || 0;
+                    let vacancy = parseInt($(this).find('.vacancy-input').val()) || 0;
+                    let appointed = parseInt($(this).find('.appointed-display').val()) || 0;
+
+                    if (vacancy > (passed - appointed)) {
+                        valid = false;
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'พบข้อผิดพลาด',
+                            text: 'จำนวนบรรจุต้องไม่เกินจำนวนคงเหลือ',
+                            confirmButtonText: 'ตกลง'
+                        });
+                        return false;
+                    }
+                });
+
+                if (!valid) {
+                    e.preventDefault();
+                }
+            });
         });
     </script>
 @endsection
