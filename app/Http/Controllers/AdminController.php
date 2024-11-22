@@ -29,16 +29,20 @@ class AdminController extends Controller
         $totalPassedExam = Subject_rounds::sum('passed_exam');
         $totalAppointed = Subject_rounds::sum('vacancy');
 
-        // สถิติรายเดือน
-        $monthlyStats = Subject_rounds::select(DB::raw('DATE_FORMAT(created_at, "%m/%Y") as month'), DB::raw('SUM(vacancy) as total'))->groupBy('month')->orderBy('created_at', 'desc')->limit(12)->get();
+        // สถิติร่างๆ
+        $monthlyStats = Subject_rounds::getMonthlyStats();
+        $subjectsStats = Subject::getSubjectsStats();
+        $recentAppointments = Subject_rounds::getRecentAppointments();
 
-        // สถิติตามกลุ่มวิชาเอก
-        $subjectsStats = Subject_rounds::select('subjects.subject_group', DB::raw('SUM(vacancy) as total'))->join('subjects', 'subjects.id', '=', 'subjects_rounds.subject_id')->groupBy('subjects.subject_group')->orderBy('total', 'desc')->limit(10)->get();
-
-        // การบรรจุล่าสุด
-        $recentAppointments = Subject_rounds::select('subjects_rounds.*', 'subjects.subject_group', 'education_area.name_education')->join('subjects', 'subjects.id', '=', 'subjects_rounds.subject_id')->join('education_area', 'education_area.id', '=', 'subjects_rounds.education_area_id')->orderBy('created_at', 'desc')->limit(5)->get();
-
-        return view('admin.index', compact('totalSubjects', 'totalEducationAreas', 'totalPassedExam', 'totalAppointed', 'monthlyStats', 'subjectsStats', 'recentAppointments'));
+        return view('admin.index', compact(
+            'totalSubjects',
+            'totalEducationAreas',
+            'totalPassedExam',
+            'totalAppointed',
+            'monthlyStats',
+            'subjectsStats',
+            'recentAppointments'
+        ));
     }
     // Education Area
     public function show_education_area()
@@ -377,52 +381,34 @@ class AdminController extends Controller
     public function subjects_rounds_next($year, $area, $round)
     {
         // ดึงข้อมูลรอบปัจจุบัน
-        $currentRound = DB::table('subjects_rounds AS sr')
-            ->select(
-                'sr.*',
-                'subjects.subject_group',
-                'education_area.name_education',
-                DB::raw('(
-                    SELECT SUM(sr2.vacancy)
-                    FROM subjects_rounds sr2
-                    WHERE sr2.round_year = sr.round_year
-                    AND sr2.education_area_id = sr.education_area_id
-                    AND sr2.subject_id = sr.subject_id
-                    AND sr2.round_number <= sr.round_number
-                ) as total_appointed'), // คำนวณยอดบรรจุสะสม
-            )
-            ->join('subjects', 'sr.subject_id', '=', 'subjects.id')
-            ->join('education_area', 'sr.education_area_id', '=', 'education_area.id')
-            ->where([
-                'sr.round_year' => $year,
-                'sr.education_area_id' => $area,
-                'sr.round_number' => $round,
-            ])
-            ->get();
+        $currentRound = Subject_rounds::getCurrentRoundData($year, $area, $round);
 
         // สร้างข้อมูลสำหรับรอบถัดไป
         $nextRoundData = [
             'round_year' => $currentRound[0]->round_year,
             'education_area_id' => $currentRound[0]->education_area_id,
             'round_number' => $currentRound[0]->round_number + 1,
-            'items' => [],
+            'items' => []
         ];
 
-        // สร้างข้อมูลวิชาเอกจากรอบก่อนหน้า
         foreach ($currentRound as $item) {
             $nextRoundData['items'][] = [
                 'subject_id' => $item->subject_id,
                 'subject_group' => $item->subject_group,
-                'passed_exam' => $item->passed_exam, // จำนวนผู้สอบผ่านทั้งหมด
-                'total_appointed' => $item->total_appointed, // ยอดบรรจุสะสม
-                'remaining' => $item->passed_exam - $item->total_appointed, // คงเหลือ
+                'passed_exam' => $item->passed_exam,
+                'total_appointed' => $item->total_appointed,
+                'remaining' => $item->passed_exam - $item->total_appointed
             ];
         }
 
-        $subjects = Subject::getSubjects();
+        $subjects = Subject::getSubjectsWithAppointments();
         $education_area = Admin::getEducationArea();
 
-        return view('admin.create_next_round', compact('nextRoundData', 'subjects', 'education_area'));
+        return view('admin.create_next_round', compact(
+            'nextRoundData',
+            'subjects',
+            'education_area'
+        ));
     }
     // Change Password
     public function changePassword()
