@@ -125,57 +125,86 @@
         </div>
     </div>
 
-    {{-- สรุปข้อมูล --}}
+    {{-- สรุปข้อมูลทุกรอบ --}}
     <div class="card mt-4">
         <div class="card-header">
-            <h3 class="card-title">สรุปข้อมูล</h3>
+            <h3 class="card-title">สรุปข้อมูลทุกรอบ</h3>
         </div>
         <div class="card-body">
-            <div class="row">
-                @if($total['vacancy'] > 0)  {{-- แสดง info boxes เมื่อมีข้อมูล --}}
-                    <div class="col-md-3">
-                        <div class="info-box bg-info">
-                            <span class="info-box-icon"><i class="fas fa-users"></i></span>
-                            <div class="info-box-content">
-                                <span class="info-box-text">ผู้สอบผ่านขึ้นบัญชี</span>
-                                <span class="info-box-number">{{ $total['passed'] }}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="info-box bg-success">
-                            <span class="info-box-icon"><i class="fas fa-user-check"></i></span>
-                            <div class="info-box-content">
-                                <span class="info-box-text">บรรจุแล้ว</span>
-                                <span class="info-box-number">{{ $total['appointed'] }}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="info-box bg-warning">
-                            <span class="info-box-icon"><i class="fas fa-user-plus"></i></span>
-                            <div class="info-box-content">
-                                <span class="info-box-text">บรรจุรอบนี้</span>
-                                <span class="info-box-number">{{ $total['vacancy'] }}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="info-box bg-danger">
-                            <span class="info-box-icon"><i class="fas fa-user-minus"></i></span>
-                            <div class="info-box-content">
-                                <span class="info-box-text">คงเหลือ</span>
-                                <span class="info-box-number">{{ $total['remaining'] }}</span>
-                            </div>
-                        </div>
-                    </div>
-                @else
-                    <div class="col-12">
-                        <div class="alert alert-info text-center">
-                            ไม่มีข้อมูลการบรรจุในรอบนี้
-                        </div>
-                    </div>
-                @endif
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="text-center" style="width: 80px;">รอบที่</th>
+                            <th class="text-center">ผู้สอบผ่าน<br>ขึ้นบัญชี</th>
+                            <th class="text-center">บรรจุแล้ว</th>
+                            <th class="text-center">บรรจุรอบนี้</th>
+                            <th class="text-center">คงเหลือ</th>
+                            <th class="text-center">วันที่ประกาศ</th>
+                            <th class="text-center">การดำเนินการ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @php
+                            $allRounds = DB::table('subjects_rounds AS sr')
+                                ->select(
+                                    'sr.round_number',
+                                    DB::raw('SUM(sr.passed_exam) as total_passed'),
+                                    DB::raw('SUM(sr.appointed) as total_appointed'),
+                                    DB::raw('SUM(sr.vacancy) as total_vacancy'),
+                                    DB::raw('SUM(sr.remaining) as total_remaining'),
+                                    'sr.created_at'
+                                )
+                                ->where([
+                                    'sr.round_year' => $round[0]->round_year,
+                                    'sr.education_area_id' => $round[0]->education_area_id
+                                ])
+                                ->groupBy('sr.round_number', 'sr.created_at')
+                                ->orderBy('sr.round_number', 'asc')
+                                ->get();
+                        @endphp
+
+                        @foreach($allRounds as $roundSummary)
+                            <tr>
+                                <td class="text-center">
+                                    {{ $roundSummary->round_number }}
+                                    @if($roundSummary->round_number == $round[0]->round_number)
+                                        <span class="badge badge-info">รอบปัจจุบัน</span>
+                                    @endif
+                                </td>
+                                <td class="text-center font-weight-bold">{{ $roundSummary->total_passed }}</td>
+                                <td class="text-center">{{ $roundSummary->total_appointed }}</td>
+                                <td class="text-center">{{ $roundSummary->total_vacancy }}</td>
+                                <td class="text-center">{{ $roundSummary->total_remaining }}</td>
+                                <td class="text-center">{{ \Carbon\Carbon::parse($roundSummary->created_at)->format('d/m/Y') }}</td>
+                                <td class="text-center">
+                                    <a href="{{ route('admin.subjects.rounds.show', [
+                                        'roundYear' => $round[0]->round_year,
+                                        'educationAreaId' => $round[0]->education_area_id,
+                                        'roundNumber' => $roundSummary->round_number
+                                    ]) }}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye"></i> ดูรายละเอียด
+                                    </a>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot class="bg-light font-weight-bold">
+                        <tr>
+                            <td class="text-center">รวมทั้งหมด</td>
+                            <td class="text-center">{{ $allRounds->max('total_passed') }}</td>
+                            <td class="text-center">{{ $allRounds->sum('total_vacancy') }}</td>
+                            <td class="text-center">{{ $allRounds->last()->total_vacancy }}</td>
+                            <td class="text-center">{{ $allRounds->last()->total_remaining }}</td>
+                            <td colspan="2"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            {{-- แสดงกราฟสรุป --}}
+            <div class="mt-4">
+                <canvas id="roundSummaryChart"></canvas>
             </div>
         </div>
     </div>
@@ -195,6 +224,12 @@
         .info-box-number {
             font-size: 24px;
             font-weight: bold;
+        }
+
+        .badge.badge-info {
+            font-size: 0.8em;
+            padding: 0.3em 0.6em;
+            margin-left: 0.5em;
         }
     </style>
 @endsection
