@@ -119,9 +119,17 @@ class AdminController extends Controller
                 'created_at.date' => 'วันที่ต้องเป็นวันที่',
                 'created_at.after' => 'วันที่ต้องเป็น คริตศักราช',
                 'created_at.before' => 'วันที่ต้องเป็น คริตศักราช',
+                'items.*.subject_id.required' => 'กรุณาระบุวิชาเอก',
+                'items.*.subject_id.integer' => 'รหัสวิชาเอกต้องเป็นตัวเลข',
+                'items.*.subject_id.exists' => 'วิชาเอกที่ระบุไม่มีอยู่ในระบบ',
+                'items.*.passed_exam.required' => 'กรุณาระบุจำนวนผู้สอบผ่านขึ้นบัญชี',
+                'created_at.required' => 'กรุณาระบุวันที่ประกาศ',
+                'created_at.date' => 'วันที่ต้องเป็นวันที่',
+                'created_at.after' => 'วันที่ต้องเป็น คริตศักราช',
+                'created_at.before' => 'วันที่ต้องเป็น คริตศักราช',
             ],
         );
-
+        //@dd($request->all());
         foreach ($request->items as $item) {
             // ตรวจสอบว่าเป็นรอบแรก
             if ($request->round_number == 1) {
@@ -157,7 +165,7 @@ class AdminController extends Controller
             ]);
         }
 
-        return redirect()->back()->with('success', 'บันทึกข้อมูลการบรรจุเรียบร้อยแล้ว');
+        return redirect()->route('admin.subjects.rounds.index')->with('success', 'บันทึกข้อมูลการบรรจุเรียบร้อยแล้ว');
     }
     public function subjects_rounds_index()
     {
@@ -201,18 +209,6 @@ class AdminController extends Controller
 
     public function subjects_rounds_delete($roundYear, $educationAreaId, $roundNumber)
     {
-        $validate = $request->validate(
-            [
-                'round_year' => 'required|integer',
-                'education_area_id' => 'required|integer',
-                'round_number' => 'required|integer',
-            ],
-            [
-                'round_year.required' => 'กรุณาระบุปีการบรรจุ',
-                'education_area_id.required' => 'กรุณาระบุรหัสสถานศึกษา',
-                'round_number.required' => 'กรุณาระบุรอบการบรรจุ',
-            ],
-        );
         try {
             DB::table('subjects_rounds')->where('round_year', $roundYear)->where('education_area_id', $educationAreaId)->where('round_number', $roundNumber)->delete();
 
@@ -294,7 +290,7 @@ class AdminController extends Controller
                 'created_at' => $request->created_at,
             ]);
 
-        return redirect()->back()->with('success', 'อัพเดทข้อมูลการบรรจุเรียบร้อยแล้ว');
+        return redirect()->route('admin.subjects.rounds.index')->with('success', 'อัพเดทข้อมูลการบรรจุเรียบร้อยแล้ว');
     }
     public function subjects_rounds_next($year, $area, $round)
     {

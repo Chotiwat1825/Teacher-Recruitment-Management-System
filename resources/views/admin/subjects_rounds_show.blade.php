@@ -82,32 +82,43 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @php $total = ['passed' => 0, 'appointed' => 0, 'vacancy' => 0, 'remaining' => 0]; @endphp
-                        @foreach ($round as $index => $item)
-                            <tr>
-                                <td class="text-center">{{ $index + 1 }}</td>
-                                <td>{{ $item->subject_group }}</td>
-                                <td class="text-center font-weight-bold">{{ $item->passed_exam }}</td>
-                                <td class="text-center">{{ $item->appointed }}</td>
-                                <td class="text-center">{{ $item->vacancy }}</td>
-                                <td class="text-center">{{ $item->remaining }}</td>
-                                <td>{{ $item->notes }}</td>
-                            </tr>
-                            @php
-                                $total['passed'] += $item->passed_exam;
-                                $total['appointed'] += $item->appointed;
-                                $total['vacancy'] += $item->vacancy;
-                                $total['remaining'] += $item->remaining;
-                            @endphp
+                        @php 
+                            $total = ['passed' => 0, 'appointed' => 0, 'vacancy' => 0, 'remaining' => 0];
+                            $index = 1;
+                        @endphp
+                        @foreach ($round as $item)
+                            @if($item->vacancy > 0)  {{-- แสดงเฉพาะรายการที่มี vacancy > 0 --}}
+                                <tr>
+                                    <td class="text-center">{{ $index++ }}</td>
+                                    <td>{{ $item->subject_group }}</td>
+                                    <td class="text-center font-weight-bold">{{ $item->passed_exam }}</td>
+                                    <td class="text-center">{{ $item->appointed }}</td>
+                                    <td class="text-center">{{ $item->vacancy }}</td>
+                                    <td class="text-center">{{ $item->remaining }}</td>
+                                    <td>{{ $item->notes }}</td>
+                                </tr>
+                                @php
+                                    $total['passed'] += $item->passed_exam;
+                                    $total['appointed'] += $item->appointed;
+                                    $total['vacancy'] += $item->vacancy;
+                                    $total['remaining'] += $item->remaining;
+                                @endphp
+                            @endif
                         @endforeach
-                        <tr class="font-weight-bold bg-light">
-                            <td colspan="2" class="text-center">รวมทั้งหมด</td>
-                            <td class="text-center">{{ $total['passed'] }}</td>
-                            <td class="text-center">{{ $total['appointed'] }}</td>
-                            <td class="text-center">{{ $total['vacancy'] }}</td>
-                            <td class="text-center">{{ $total['remaining'] }}</td>
-                            <td></td>
-                        </tr>
+                        @if($total['vacancy'] > 0)  {{-- แสดงแถวรวมเมื่อมีข้อมูล --}}
+                            <tr class="font-weight-bold bg-light">
+                                <td colspan="2" class="text-center">รวมทั้งหมด</td>
+                                <td class="text-center">{{ $total['passed'] }}</td>
+                                <td class="text-center">{{ $total['appointed'] }}</td>
+                                <td class="text-center">{{ $total['vacancy'] }}</td>
+                                <td class="text-center">{{ $total['remaining'] }}</td>
+                                <td></td>
+                            </tr>
+                        @else
+                            <tr>
+                                <td colspan="7" class="text-center">ไม่มีข้อมูลการบรรจุในรอบนี้</td>
+                            </tr>
+                        @endif
                     </tbody>
                 </table>
             </div>
@@ -121,42 +132,50 @@
         </div>
         <div class="card-body">
             <div class="row">
-                <div class="col-md-3">
-                    <div class="info-box bg-info">
-                        <span class="info-box-icon"><i class="fas fa-users"></i></span>
-                        <div class="info-box-content">
-                            <span class="info-box-text">ผู้สอบผ่านขึ้นบัญชี</span>
-                            <span class="info-box-number">{{ $total['passed'] }}</span>
+                @if($total['vacancy'] > 0)  {{-- แสดง info boxes เมื่อมีข้อมูล --}}
+                    <div class="col-md-3">
+                        <div class="info-box bg-info">
+                            <span class="info-box-icon"><i class="fas fa-users"></i></span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">ผู้สอบผ่านขึ้นบัญชี</span>
+                                <span class="info-box-number">{{ $total['passed'] }}</span>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="info-box bg-success">
-                        <span class="info-box-icon"><i class="fas fa-user-check"></i></span>
-                        <div class="info-box-content">
-                            <span class="info-box-text">บรรจุแล้ว</span>
-                            <span class="info-box-number">{{ $total['appointed'] }}</span>
+                    <div class="col-md-3">
+                        <div class="info-box bg-success">
+                            <span class="info-box-icon"><i class="fas fa-user-check"></i></span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">บรรจุแล้ว</span>
+                                <span class="info-box-number">{{ $total['appointed'] }}</span>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="info-box bg-warning">
-                        <span class="info-box-icon"><i class="fas fa-user-plus"></i></span>
-                        <div class="info-box-content">
-                            <span class="info-box-text">บรรจุรอบนี้</span>
-                            <span class="info-box-number">{{ $total['vacancy'] }}</span>
+                    <div class="col-md-3">
+                        <div class="info-box bg-warning">
+                            <span class="info-box-icon"><i class="fas fa-user-plus"></i></span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">บรรจุรอบนี้</span>
+                                <span class="info-box-number">{{ $total['vacancy'] }}</span>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="info-box bg-danger">
-                        <span class="info-box-icon"><i class="fas fa-user-minus"></i></span>
-                        <div class="info-box-content">
-                            <span class="info-box-text">คงเหลือ</span>
-                            <span class="info-box-number">{{ $total['remaining'] }}</span>
+                    <div class="col-md-3">
+                        <div class="info-box bg-danger">
+                            <span class="info-box-icon"><i class="fas fa-user-minus"></i></span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">คงเหลือ</span>
+                                <span class="info-box-number">{{ $total['remaining'] }}</span>
+                            </div>
                         </div>
                     </div>
-                </div>
+                @else
+                    <div class="col-12">
+                        <div class="alert alert-info text-center">
+                            ไม่มีข้อมูลการบรรจุในรอบนี้
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
     </div>
