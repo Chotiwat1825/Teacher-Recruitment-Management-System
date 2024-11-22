@@ -16,7 +16,7 @@ class HomeController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('auth');
+        $this->middleware('auth')->except('index');
     }
 
     /**
@@ -26,6 +26,19 @@ class HomeController extends Controller
      */
     public function index(Request $request)
     {
+        $validated = $request->validate(
+            [
+                'education_area' => 'nullable|string',
+                'subject_group' => 'nullable|string',
+                'year' => 'nullable|string',
+            ],
+            [
+                'education_area.string' => 'เขตพื้นที่การศึกษาไม่ถูกต้อง',
+                'subject_group.string' => 'กลุ่มวิชาเอกไม่ถูกต้อง',
+                'year.string' => 'ปีการศึกษาไม่ถูกต้อง',
+            ],
+        );
+
         $educationAreas = Admin::getEducationArea();
         $subjects = Subject::getSubjects();
         $years = Subject_rounds::getYears();
@@ -40,14 +53,6 @@ class HomeController extends Controller
             $results = Subject_rounds::getSearchResults($request);
         }
 
-        return view('home', compact(
-            'educationAreas',
-            'subjects',
-            'years',
-            'results',
-            'totalSubjects',
-            'totalPassedExam',
-            'totalAppointed'
-        ));
+        return view('home', compact('educationAreas', 'subjects', 'years', 'results', 'totalSubjects', 'totalPassedExam', 'totalAppointed'));
     }
 }

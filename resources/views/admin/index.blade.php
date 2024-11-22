@@ -18,7 +18,7 @@
                 <div class="icon">
                     <i class="fas fa-book"></i>
                 </div>
-                <a href="{{ route('admin.index') }}" class="small-box-footer">
+                <a href="{{ route('admin.subjects.index') }}" class="small-box-footer">
                     ดูรายละเอียด <i class="fas fa-arrow-circle-right"></i>
                 </a>
             </div>

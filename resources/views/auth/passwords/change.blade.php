@@ -3,7 +3,7 @@
 @section('title', 'Change Password')
 
 @section('content_header')
-    <h1>Change Password</h1>
+    <h1>เปลี่ยนรหัสผ่าน</h1>
 @stop
 
 @section('content')
@@ -21,7 +21,7 @@
                         @csrf
 
                         <div class="form-group">
-                            <label for="current_password">Current Password</label>
+                            <label for="current_password">รหัสผ่านปัจจุบัน</label>
                             <input id="current_password" type="password"
                                 class="form-control @error('current_password') is-invalid @enderror" name="current_password"
                                 required>
@@ -33,7 +33,7 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="new_password">New Password</label>
+                            <label for="new_password">รหัสผ่านใหม่</label>
                             <input id="new_password" type="password"
                                 class="form-control @error('new_password') is-invalid @enderror" name="new_password"
                                 required>
@@ -45,13 +45,13 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="new_password_confirmation">Confirm New Password</label>
+                            <label for="new_password_confirmation">ยืนยันรหัสผ่านใหม่</label>
                             <input id="new_password_confirmation" type="password" class="form-control"
                                 name="new_password_confirmation" required>
                         </div>
 
                         <button type="submit" class="btn btn-primary">
-                            Change Password
+                            เปลี่ยนรหัสผ่าน
                         </button>
                     </form>
                 </div>

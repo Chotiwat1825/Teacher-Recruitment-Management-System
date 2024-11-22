@@ -83,7 +83,7 @@ return [
     */
 
     'auth_logo' => [
-        'enabled' => false,
+        'enabled' => true,
         'img' => [
             'path' => 'vendor/adminlte/dist/img/AdminLTELogo.png',
             'alt' => 'Auth Logo',
@@ -314,11 +314,17 @@ return [
             'type' => 'sidebar-menu-search',
             'text' => 'search',
         ],
-        ['header' => 'Dashboard'],
+
+        ['header' => 'หน้าหลัก'],
         [
-            'text' => 'Dashboard',
-            'url' => 'admin',
+            'text' => 'หน้าหลัก',
+            'url' => 'home',
             'icon' => 'fas fa-fw fa-home',
+        ],
+        [
+            'text' => 'แดชบอร์ด',
+            'url' => 'admin',
+            'icon' => 'fas fa-fw fa-tachometer-alt',
         ],
         ['header' => 'ข้อมูลการบรรจุ'],
         [
@@ -341,71 +347,24 @@ return [
             'url' => '/admin/subjects/rounds',
             'icon' => 'fas fa-fw fa-list',
         ],
-        ['header' => 'account_settings'],
+        ['header' => 'ข้อมูลส่วนตัว'],
         [
-            'text' => 'profile',
+            'text' => 'โปรไฟล์',
             'url' => 'admin/profile/edit',
             'icon' => 'fas fa-fw fa-user',
         ],
         [
-            'text' => 'change_password',
+            'text' => 'เปลี่ยนรหัสผ่าน',
             'url' => 'admin/change-password',
             'icon' => 'fas fa-fw fa-lock',
         ],
         [
-            'text' => 'multilevel',
-            'icon' => 'fas fa-fw fa-share',
-            'submenu' => [
-                [
-                    'text' => 'level_one',
-                    'url' => '#',
-                ],
-                [
-                    'text' => 'level_one',
-                    'url' => '#',
-                    'submenu' => [
-                        [
-                            'text' => 'level_two',
-                            'url' => '#',
-                        ],
-                        [
-                            'text' => 'level_two',
-                            'url' => '#',
-                            'submenu' => [
-                                [
-                                    'text' => 'level_three',
-                                    'url' => '#',
-                                ],
-                                [
-                                    'text' => 'level_three',
-                                    'url' => '#',
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-                [
-                    'text' => 'level_one',
-                    'url' => '#',
-                ],
-            ],
+            'text' => 'ออกจากระบบ',
+            'url'  => '#',
+            'icon' => 'fas fa-fw fa-sign-out-alt',
+            'onclick' => "event.preventDefault(); document.getElementById('logout-form').submit();",
         ],
-        ['header' => 'labels'],
-        [
-            'text' => 'important',
-            'icon_color' => 'red',
-            'url' => '#',
-        ],
-        [
-            'text' => 'warning',
-            'icon_color' => 'yellow',
-            'url' => '#',
-        ],
-        [
-            'text' => 'information',
-            'icon_color' => 'cyan',
-            'url' => '#',
-        ],
+
     ],
 
     /*
