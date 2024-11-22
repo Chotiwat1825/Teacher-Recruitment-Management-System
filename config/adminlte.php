@@ -327,6 +327,11 @@ return [
             'icon' => 'fas fa-fw fa-school',
         ],
         [
+            'text' => 'กลุ่มวิชาเอก',
+            'url' => 'admin/subjects/index',
+            'icon' => 'fas fa-fw fa-book',
+        ],
+        [
             'text' => 'สร้างข้อมูลการบรรจุ',
             'url' => 'admin/create_rounds',
             'icon' => 'fas fa-fw fa-plus',

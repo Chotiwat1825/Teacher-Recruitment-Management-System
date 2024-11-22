@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 use App\Models\Admin;
 use App\Models\Subject;
@@ -22,7 +23,22 @@ class AdminController extends Controller
 
     public function index()
     {
-        return view('admin.index');
+        // สรุปข้อมูลทั่วไป
+        $totalSubjects = Subject::count();
+        $totalEducationAreas = Admin::count();
+        $totalPassedExam = Subject_rounds::sum('passed_exam');
+        $totalAppointed = Subject_rounds::sum('vacancy');
+
+        // สถิติรายเดือน
+        $monthlyStats = Subject_rounds::select(DB::raw('DATE_FORMAT(created_at, "%m/%Y") as month'), DB::raw('SUM(vacancy) as total'))->groupBy('month')->orderBy('created_at', 'desc')->limit(12)->get();
+
+        // สถิติตามกลุ่มวิชาเอก
+        $subjectsStats = Subject_rounds::select('subjects.subject_group', DB::raw('SUM(vacancy) as total'))->join('subjects', 'subjects.id', '=', 'subjects_rounds.subject_id')->groupBy('subjects.subject_group')->orderBy('total', 'desc')->limit(10)->get();
+
+        // การบรรจุล่าสุด
+        $recentAppointments = Subject_rounds::select('subjects_rounds.*', 'subjects.subject_group', 'education_area.name_education')->join('subjects', 'subjects.id', '=', 'subjects_rounds.subject_id')->join('education_area', 'education_area.id', '=', 'subjects_rounds.education_area_id')->orderBy('created_at', 'desc')->limit(5)->get();
+
+        return view('admin.index', compact('totalSubjects', 'totalEducationAreas', 'totalPassedExam', 'totalAppointed', 'monthlyStats', 'subjectsStats', 'recentAppointments'));
     }
     // Education Area
     public function show_education_area()
@@ -84,6 +100,72 @@ class AdminController extends Controller
         $education_area = Admin::where('id', $request->id)->delete();
 
         return redirect()->route('admin.show_education_area')->with('success', 'ลบข้อมูลเขตพื้นที่การศึกษาเรียบร้อยแล้ว');
+    }
+    public function subjects_index()
+    {
+        $subjects = Subject::orderBy('subject_group')->get();
+        return view('admin.subjects_index', compact('subjects'));
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate(
+            [
+                'subject_group' => 'required|string|max:255|unique:subjects',
+            ],
+            [
+                'subject_group.required' => 'กรุณาระบุชื่อกลุ่มวิชาเอก',
+                'subject_group.unique' => 'มีชื่อกลุ่มวิชาเอกนี้อยู่แล้ว',
+            ],
+        );
+
+        Subject::create([
+            'subject_group' => $request->subject_group,
+        ]);
+
+        return redirect()->route('admin.subjects.index')->with('success', 'เพิ่มข้อมูลวิชาเอกเรียบร้อยแล้ว');
+    }
+
+    public function update(Request $request, $id)
+    {
+        $subject = Subject::findOrFail($id);
+
+        $request->validate(
+            [
+                'subject_group' => ['required', 'string', 'max:255', Rule::unique('subjects')->ignore($id)],
+            ],
+            [
+                'subject_group.required' => 'กรุณาระบุชื่อกลุ่มวิชาเอก',
+                'subject_group.unique' => 'มีชื่อกลุ่มวิชาเอกนี้อยู่แล้ว',
+            ],
+        );
+
+        $subject->update([
+            'subject_group' => $request->subject_group,
+        ]);
+
+        return redirect()->route('admin.subjects.index')->with('success', 'แก้ไขข้อมูลวิชาเอกเรียบร้อยแล้ว');
+    }
+
+    public function destroy($id)
+    {
+        $subject = Subject::findOrFail($id);
+
+        // ตรวจสอบการใช้งานในตาราง subjects_rounds
+        if (Subject_rounds::where('subject_id', $id)->exists()) {
+            return response()->json(
+                [
+                    'message' => 'ไม่สามารถลบได้เนื่องจากมีการใช้งานในระบบ',
+                ],
+                422,
+            );
+        }
+
+        $subject->delete();
+
+        return response()->json([
+            'message' => 'ลบข้อมูลเรียบร้อยแล้ว',
+        ]);
     }
     public function create_rounds()
     {
@@ -383,28 +465,22 @@ class AdminController extends Controller
         $request->validate(
             [
                 'name' => 'required|string|max:255',
-                'current_password' => 'required_with:new_password',
-                'new_password' => 'nullable|min:8|confirmed',
+                'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
             ],
             [
-                'name.required' => 'กรุณาระบุชื่อ',
-                'current_password.required_with' => 'กรุณาระบุรหัสผ่านปัจจุบัน',
-                'new_password.min' => 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร',
-                'new_password.confirmed' => 'รหัสผ่านใหม่ไม่ตรงกับรหัสผ่านที่ระบุ',
+                'name.required' => 'กรุณาระบุชื่อ-นามสกุล',
+                'name.max' => 'ชื่อ-นามสกุลต้องไม่เกิน 255 ตัวอักษร',
+                'email.required' => 'กรุณาระบุอีเมล',
+                'email.email' => 'รูปแบบอีเมลไม่ถูกต้อง',
+                'email.max' => 'อีเมลต้องไม่เกิน 255 ตัวอักษร',
+                'email.unique' => 'อีเมลนี้ถูกใช้งานแล้ว',
             ],
         );
 
-        if ($request->filled('current_password')) {
-            if (!Hash::check($request->current_password, $user->password)) {
-                return back()->withErrors(['current_password' => 'รหัสผ่านปัจจุบันไม่ถูกต้อง']);
-            }
-
-            $user->password = Hash::make($request->new_password);
-        }
-
         $user->name = $request->name;
+        $user->email = $request->email;
         $user->save();
 
-        return redirect()->route('profile.edit')->with('success', 'อัพเดทโปรไฟล์เรียบร้อยแล้ว');
+        return redirect()->route('admin.profile.edit')->with('success', 'อัพเดทข้อมูลโปรไฟล์เรียบร้อยแล้ว');
     }
 }

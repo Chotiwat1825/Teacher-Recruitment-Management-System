@@ -8,7 +8,9 @@ use Illuminate\Support\Facades\DB;
 
 class Subject extends Model
 {
-    protected $fillable = ['subject_group'];
+    
+    protected $table = 'subjects';
+
     
     public static function getSubjects()
     {

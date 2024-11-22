@@ -23,6 +23,11 @@ Route::prefix('admin')
         Route::post('/education_area/update', [AdminController::class, 'education_area_update'])->name('education.area.update');
         Route::get('/education_area/delete', [AdminController::class, 'education_area_delete'])->name('education.area.delete');
 
+        // Subjects CRUD
+        Route::get('/subjects/index', [AdminController::class, 'subjects_index'])->name('subjects.index');
+        Route::post('/subjects', [AdminController::class, 'subjects_store'])->name('subjects.store');
+        Route::put('/subjects/{id}', [AdminController::class, 'subjects_update'])->name('subjects.update');
+        Route::delete('/subjects/{id}', [AdminController::class, 'subjects_destroy'])->name('subjects.destroy');
         // Subjects Rounds
         Route::get('/create_rounds', [AdminController::class, 'create_rounds'])->name('create.rounds');
         Route::post('/rounds/create', [AdminController::class, 'subjects_rounds_create'])->name('subjects.rounds.create');
