@@ -7,7 +7,7 @@
 @stop
 
 @section('content')
-    <form action="{{ route('admin.subjects.rounds.create') }}" method="POST">
+    <form action="{{ route('admin.subjects.rounds.create') }}" method="POST" enctype="multipart/form-data">
         @csrf
 
         {{-- ข้อมูลทั่วไป --}}
@@ -47,6 +47,26 @@
                             <input type="text" class="form-control" value="{{ $nextRoundData['round_number'] }}"
                                 readonly>
                             <input type="hidden" name="round_number" value="{{ $nextRoundData['round_number'] }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label for="document">เอกสารแนบ (PDF, JPEG, PNG)</label>
+                            <div class="custom-file">
+                                <input type="file" class="custom-file-input" id="document" name="document" accept=".pdf,.jpeg,.jpg,.png">
+                                <label class="custom-file-label" for="document">เลือกไฟล์</label>
+                            </div>
+                            <small class="form-text text-muted">รองรับไฟล์ PDF, JPEG, PNG ขนาดไม่เกิน 10MB</small>
+                            @error('document')
+                                <div class="text-danger">{{ $message }}</div>
+                            @enderror
                         </div>
                     </div>
                 </div>
@@ -153,6 +173,12 @@
                 // อัพเดทจำนวนคงเหลือ
                 let remaining = max - vacancy;
                 $row.find('.remaining-display').val(remaining);
+            });
+
+            // Add this for file input display
+            $('.custom-file-input').on('change', function() {
+                let fileName = $(this).val().split('\\').pop();
+                $(this).next('.custom-file-label').addClass("selected").html(fileName || 'เลือกไฟล์');
             });
         });
     </script>

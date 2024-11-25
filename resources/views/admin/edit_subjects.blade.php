@@ -7,7 +7,7 @@
 @stop
 
 @section('content')
-    <form action="{{ route('admin.subjects.rounds.update') }}" method="POST">
+    <form action="{{ route('admin.subjects.rounds.update') }}" method="POST" enctype="multipart/form-data">
         @csrf
         @method('PUT')
 
@@ -63,6 +63,45 @@
                             <label for="round_number">รอบการเรียกบรรจุ</label>
                             <input type="number" class="form-control" id="round_number" name="round_number"
                                 value="{{ $round->round_number }}" required>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Add this after the general information card and before the subject items card --}}
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label for="document">เอกสารแนบ (PDF, JPEG, PNG)</label>
+                            @if ($round->document_path)
+                                <div class="mb-3">
+                                    <p class="text-success">
+                                        <i class="fas fa-file"></i> มีไฟล์เอกสารแนบอยู่แล้ว
+                                        <a href="{{ route('admin.subjects.rounds.document', [
+                                            'year' => $round->round_year,
+                                            'area' => $round->education_area_id,
+                                            'round' => $round->round_number,
+                                        ]) }}"
+                                            target="_blank" class="btn btn-sm btn-info ml-2">
+                                            <i class="fas fa-eye"></i> ดูเอกสาร
+                                        </a>
+                                    </p>
+                                </div>
+                            @endif
+                            <div class="custom-file">
+                                <input type="file" class="custom-file-input" id="document" name="document"
+                                    accept=".pdf,.jpeg,.jpg,.png">
+                                <label class="custom-file-label" for="document">
+                                    {{ $round->document_path ? 'เลือกไฟล์ใหม่เพื่อแทนที่' : 'เลือกไฟล์' }}
+                                </label>
+                            </div>
+                            <small class="form-text text-muted">รองรับไฟล์ PDF, JPEG, PNG ขนาดไม่เกิน 10MB</small>
+                            @error('document')
+                                <div class="text-danger">{{ $message }}</div>
+                            @enderror
                         </div>
                     </div>
                 </div>
@@ -171,6 +210,12 @@
             $(document).on('click', '.remove-item', function() {
                 $(this).closest('.subject-item').remove();
             });
+        });
+
+        // Add this for file input display
+        $('.custom-file-input').on('change', function() {
+            let fileName = $(this).val().split('\\').pop();
+            $(this).next('.custom-file-label').addClass("selected").html(fileName || 'เลือกไฟล์');
         });
     </script>
 @endsection

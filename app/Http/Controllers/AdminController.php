@@ -35,15 +35,7 @@ class AdminController extends Controller
         $subjectsStats = Subject::getSubjectsStats();
         $recentAppointments = Subject_rounds::getRecentAppointments();
 
-        return view('admin.index', compact(
-            'totalSubjects',
-            'totalEducationAreas',
-            'totalPassedExam',
-            'totalAppointed',
-            'monthlyStats',
-            'subjectsStats',
-            'recentAppointments'
-        ));
+        return view('admin.index', compact('totalSubjects', 'totalEducationAreas', 'totalPassedExam', 'totalAppointed', 'monthlyStats', 'subjectsStats', 'recentAppointments'));
     }
     // Education Area
     public function show_education_area()
@@ -181,19 +173,19 @@ class AdminController extends Controller
     }
     public function subjects_rounds_create(Request $request)
     {
-        // Validate the request
+        // Add document validation to existing validation rules
         $request->validate(
             [
                 'round_year' => 'required|integer',
-                'education_area_id' => 'required|integer', //|exists:education_area,id'
+                'education_area_id' => 'required|integer',
                 'round_number' => 'required|integer',
                 'items' => 'required|array',
-                'items.*.subject_id' => 'required|integer|exists:subjects,id', //|exists:subjects,id
-                'items.*.passed_exam' => 'required|integer|min:0', // ผู้สอบผ่านขึ้นบัญชี
-                'items.*.vacancy' => 'required|integer|min:0', // จำนวนที่บรรจุ
+                'items.*.subject_id' => 'required|integer|exists:subjects,id',
+                'items.*.passed_exam' => 'required|integer|min:0',
+                'items.*.vacancy' => 'required|integer|min:0',
                 'items.*.notes' => 'nullable|string',
-                'created_at' => 'required|date|after:1957-01-01|before:2100-12-31', // ตรวจสอบวันที่ให้อยู่ในช่วง พ.ศ. 2500-2643
-                'document' => 'nullable|file|mimes:pdf,jpeg,jpg,png|max:10240', // 10MB max
+                'created_at' => 'required|date',
+                'document' => 'nullable|file|mimes:pdf,jpeg,jpg,png|max:10240',
             ],
             [
                 'round_year.required' => 'กรุณาระบุปีการบรรจุ',
@@ -218,54 +210,41 @@ class AdminController extends Controller
                 'document.file' => 'เอกสารแนบต้องเป็นไฟล์',
                 'document.mimes' => 'เอกสารแนบต้องเป็นไฟล์ PDF, JPEG หรือ PNG เท่านั้น',
                 'document.max' => 'ขนาดไฟล์ต้องไม่เกิน 10MB',
-            ],
+            ]
         );
-        //@dd($request->all());
 
-        // Handle file upload if a file was provided
+        // Handle file upload if provided
         $documentPath = null;
         if ($request->hasFile('document')) {
-            $file = $request->file('document');
-            $documentPath = $file->store('subject-rounds-documents', 'public');
+            $documentPath = $request->file('document')->store('subject-rounds-documents', 'public');
         }
 
+        // Insert items with document path
         foreach ($request->items as $item) {
-            // ตรวจสอบว่าเป็นรอบแรก
-            if ($request->round_number == 1) {
-                $appointed = 0; // รอบแรก appointed = 0
+            if ($item['vacancy'] > 0) { // Only insert if vacancy > 0
+                $appointed = $item['vacancy'];
                 $remaining = $item['passed_exam'] - $item['vacancy'];
-            } else {
-                // ดึงข้อมูลการบรรจุสะสมจากรอบก่อนหน้า
-                $previousAppointed = DB::table('subjects_rounds')
-                    ->where([
-                        'round_year' => $request->round_year,
-                        'education_area_id' => $request->education_area_id,
-                        'subject_id' => $item['subject_id'],
-                    ])
-                    ->where('round_number', '<', $request->round_number)
-                    ->sum('vacancy');
 
-                $appointed = $previousAppointed + $item['vacancy'];
-                $remaining = $item['passed_exam'] - $appointed;
+                DB::table('subjects_rounds')->insert([
+                    'round_year' => $request->round_year,
+                    'education_area_id' => $request->education_area_id,
+                    'round_number' => $request->round_number,
+                    'subject_id' => $item['subject_id'],
+                    'passed_exam' => $item['passed_exam'],
+                    'appointed' => $appointed,
+                    'vacancy' => $item['vacancy'],
+                    'remaining' => $remaining,
+                    'notes' => $item['notes'] ?? '',
+                    'document_path' => $documentPath,
+                    'created_at' => $request->created_at,
+                    'updated_at' => now(),
+                ]);
             }
-
-            DB::table('subjects_rounds')->insert([
-                'round_year' => $request->round_year,
-                'education_area_id' => $request->education_area_id,
-                'round_number' => $request->round_number,
-                'subject_id' => $item['subject_id'],
-                'passed_exam' => $item['passed_exam'],
-                'appointed' => $appointed,
-                'vacancy' => $item['vacancy'],
-                'remaining' => $remaining,
-                'notes' => $item['notes'] ?? '',
-                'document_path' => $documentPath,
-                'created_at' => $request->created_at,
-                'updated_at' => now(),
-            ]);
         }
 
-        return redirect()->route('admin.subjects.rounds.index')->with('success', 'บันทึกข้อมูลการบรรจุเรียบร้อยแล้ว');
+        return redirect()
+            ->route('admin.subjects.rounds.index')
+            ->with('success', 'เพิ่มข้อมูลการบรรจุเรียบร้อยแล้ว');
     }
     public function subjects_rounds_index()
     {
@@ -339,7 +318,7 @@ class AdminController extends Controller
     // เพิ่มเมธอดสำหรับอัพเดทข้อมูล
     public function subjects_rounds_update(Request $request)
     {
-        // Validate
+        // Add document validation to existing validation rules
         $request->validate(
             [
                 'round_year' => 'required|integer',
@@ -352,15 +331,44 @@ class AdminController extends Controller
                 'items.*.vacancy' => 'required|integer|min:0',
                 'items.*.notes' => 'nullable|string',
                 'created_at' => 'required|date',
+                'document' => 'nullable|file|mimes:pdf,jpeg,jpg,png|max:10240', // 10MB max
             ],
             [
                 'round_year.required' => 'กรุณาระบุปีการบรรจุ',
                 'education_area_id.required' => 'กรุณาระบุรหัสสถานศึกษา',
                 'round_number.required' => 'กรุณาระบุรอบการบรรจุ',
-            ],
+                'document.file' => 'เอกสารแนบต้องเป็นไฟล์',
+                'document.mimes' => 'เอกสารแนบต้องเป็นไฟล์ PDF, JPEG หรือ PNG เท่านั้น',
+                'document.max' => 'ขนาดไฟล์ต้องไม่เกิน 10MB',
+            ]
         );
 
-        // อัพเดทข้อมูลแต่ละรายการ
+        // Handle file upload if a new file was provided
+        if ($request->hasFile('document')) {
+            // Get the current document path
+            $currentDocument = DB::table('subjects_rounds')
+                ->where('round_year', $request->old_round_year)
+                ->where('education_area_id', $request->old_education_area_id)
+                ->where('round_number', $request->old_round_number)
+                ->value('document_path');
+
+            // Delete the old file if it exists
+            if ($currentDocument && Storage::disk('public')->exists($currentDocument)) {
+                Storage::disk('public')->delete($currentDocument);
+            }
+
+            // Store the new file
+            $documentPath = $request->file('document')->store('subject-rounds-documents', 'public');
+
+            // Update document path in database
+            DB::table('subjects_rounds')
+                ->where('round_year', $request->old_round_year)
+                ->where('education_area_id', $request->old_education_area_id)
+                ->where('round_number', $request->old_round_number)
+                ->update(['document_path' => $documentPath]);
+        }
+
+        // Update items as before
         foreach ($request->items as $item) {
             $appointed = $item['vacancy'];
             $remaining = $item['passed_exam'] - $item['vacancy'];
@@ -378,7 +386,7 @@ class AdminController extends Controller
                 ]);
         }
 
-        // อัพเดทข้อมูลหลัก
+        // Update main data
         DB::table('subjects_rounds')
             ->where('round_year', $request->old_round_year)
             ->where('education_area_id', $request->old_education_area_id)
@@ -390,7 +398,9 @@ class AdminController extends Controller
                 'created_at' => $request->created_at,
             ]);
 
-        return redirect()->route('admin.subjects.rounds.index')->with('success', 'อัพเดทข้อมูลการบรรจุเรียบร้อยแล้ว');
+        return redirect()
+            ->route('admin.subjects.rounds.index')
+            ->with('success', 'อัพเดทข้อมูลการบรรจุเรียบร้อยแล้ว');
     }
     public function subjects_rounds_next($year, $area, $round)
     {
@@ -402,7 +412,7 @@ class AdminController extends Controller
             'round_year' => $currentRound[0]->round_year,
             'education_area_id' => $currentRound[0]->education_area_id,
             'round_number' => $currentRound[0]->round_number + 1,
-            'items' => []
+            'items' => [],
         ];
 
         foreach ($currentRound as $item) {
@@ -411,18 +421,14 @@ class AdminController extends Controller
                 'subject_group' => $item->subject_group,
                 'passed_exam' => $item->passed_exam,
                 'total_appointed' => $item->total_appointed,
-                'remaining' => $item->passed_exam - $item->total_appointed
+                'remaining' => $item->passed_exam - $item->total_appointed,
             ];
         }
 
         $subjects = Subject::getSubjectsWithAppointments();
         $education_area = Admin::getEducationArea();
 
-        return view('admin.create_next_round', compact(
-            'nextRoundData',
-            'subjects',
-            'education_area'
-        ));
+        return view('admin.create_next_round', compact('nextRoundData', 'subjects', 'education_area'));
     }
     // Change Password
     public function changePassword()
@@ -484,14 +490,22 @@ class AdminController extends Controller
         return redirect()->route('admin.profile.edit')->with('success', 'อัพเดทข้อมูลโปรไฟล์เรียบร้อยแล้ว');
     }
 
-    // Add a method to handle document downloads
-    public function downloadDocument($roundYear, $educationAreaId, $roundNumber)
+    public function viewDocument($roundYear, $educationAreaId, $roundNumber)
     {
+        // Validate input parameters
+        if (!is_numeric($roundYear) || !is_numeric($educationAreaId) || !is_numeric($roundNumber)) {
+            return redirect()->back()->with('error', 'ข้อมูลไม่ถูกต้อง');
+        }
+
+        // Check if user is authenticated
+        if (!auth()->check()) {
+            return redirect()->route('login');
+        }
         $round = DB::table('subjects_rounds')
             ->where([
                 'round_year' => $roundYear,
                 'education_area_id' => $educationAreaId,
-                'round_number' => $roundNumber
+                'round_number' => $roundNumber,
             ])
             ->first();
 
@@ -503,6 +517,12 @@ class AdminController extends Controller
             return redirect()->back()->with('error', 'ไม่พบไฟล์เอกสาร');
         }
 
-        return Storage::disk('public')->download($round->document_path);
+        $path = Storage::disk('public')->path($round->document_path);
+        $type = Storage::disk('public')->mimeType($round->document_path);
+
+        return response()->file($path, [
+            'Content-Type' => $type,
+            'Content-Disposition' => 'inline; filename="' . basename($round->document_path) . '"',
+        ]);
     }
 }
