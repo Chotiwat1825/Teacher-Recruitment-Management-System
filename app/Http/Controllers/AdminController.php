@@ -9,11 +9,14 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Storage;
+use App\Http\Controllers\HomeController;
 
 use App\Models\Admin;
 use App\Models\Subject;
 use App\Models\Subject_rounds;
 use App\Rules\MatchOldPassword;
+
+
 
 class AdminController extends Controller
 {
@@ -210,7 +213,7 @@ class AdminController extends Controller
                 'document.file' => 'เอกสารแนบต้องเป็นไฟล์',
                 'document.mimes' => 'เอกสารแนบต้องเป็นไฟล์ PDF, JPEG หรือ PNG เท่านั้น',
                 'document.max' => 'ขนาดไฟล์ต้องไม่เกิน 10MB',
-            ]
+            ],
         );
 
         // Handle file upload if provided
@@ -221,7 +224,8 @@ class AdminController extends Controller
 
         // Insert items with document path
         foreach ($request->items as $item) {
-            if ($item['vacancy'] > 0) { // Only insert if vacancy > 0
+            if ($item['vacancy'] > 0) {
+                // Only insert if vacancy > 0
                 $appointed = $item['vacancy'];
                 $remaining = $item['passed_exam'] - $item['vacancy'];
 
@@ -242,9 +246,7 @@ class AdminController extends Controller
             }
         }
 
-        return redirect()
-            ->route('admin.subjects.rounds.index')
-            ->with('success', 'เพิ่มข้อมูลการบรรจุเรียบร้อยแล้ว');
+        return redirect()->route('admin.subjects.rounds.index')->with('success', 'เพิ่มข้อมูลการบรรจุเรียบร้อยแล้ว');
     }
     public function subjects_rounds_index()
     {
@@ -340,7 +342,7 @@ class AdminController extends Controller
                 'document.file' => 'เอกสารแนบต้องเป็นไฟล์',
                 'document.mimes' => 'เอกสารแนบต้องเป็นไฟล์ PDF, JPEG หรือ PNG เท่านั้น',
                 'document.max' => 'ขนาดไฟล์ต้องไม่เกิน 10MB',
-            ]
+            ],
         );
 
         // Handle file upload if a new file was provided
@@ -398,9 +400,7 @@ class AdminController extends Controller
                 'created_at' => $request->created_at,
             ]);
 
-        return redirect()
-            ->route('admin.subjects.rounds.index')
-            ->with('success', 'อัพเดทข้อมูลการบรรจุเรียบร้อยแล้ว');
+        return redirect()->route('admin.subjects.rounds.index')->with('success', 'อัพเดทข้อมูลการบรรจุเรียบร้อยแล้ว');
     }
     public function subjects_rounds_next($year, $area, $round)
     {

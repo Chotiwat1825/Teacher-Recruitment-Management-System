@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\HomeController;
 
 Route::get('/', function () {
     return redirect()->route('home');
@@ -10,7 +11,12 @@ Route::get('/', function () {
 
 Auth::routes();
 
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+Route::prefix('home')
+    ->name('home.')
+    ->group(function () {
+        Route::get('/', [HomeController::class, 'index'])->name('index');
+        Route::get('/rounds/{roundYear}/{educationAreaId}/{roundNumber}', [HomeController::class, 'show'])->name('rounds.show');
+    });
 
 // Profile
 Route::prefix('admin')

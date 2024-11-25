@@ -65,7 +65,7 @@
                 <h5 class="mb-0 text-dark"><i class="fas fa-search me-2"></i>ค้นหาข้อมูล</h5>
             </div>
             <div class="card-body">
-                <form action="{{ route('home') }}" method="GET">
+                <form action="{{ route('home.index') }}" method="GET">
                     <div class="row g-3">
                         <div class="col-md-4">
                             <div class="form-group">
@@ -123,7 +123,7 @@
                         <button type="submit" class="btn btn-primary px-4">
                             <i class="fas fa-search me-2"></i>ค้นหา
                         </button>
-                        <a href="{{ route('home') }}" class="btn btn-outline-secondary px-4 ms-2">
+                        <a href="{{ route('home.index') }}" class="btn btn-outline-secondary px-4 ms-2">
                             <i class="fas fa-redo me-2"></i>ล้างการค้นหา
                         </a>
                     </div>
@@ -170,13 +170,22 @@
                                         <td class="text-center">{{ number_format($result->remaining) }}</td>
                                         <td>{{ \Carbon\Carbon::parse($result->created_at)->format('d/m/Y') }}</td>
                                         <td class="text-center">
+                                            <a href="{{ route('home.rounds.show', [
+                                                'roundYear' => $result->round_year,
+                                                'educationAreaId' => $result->education_area_id,
+                                                'roundNumber' => $result->round_number,
+                                            ]) }}"
+                                                class="btn btn-sm btn-info me-2" title="ดูรายละเอียด">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+
                                             @if ($result->document_path)
                                                 <a href="{{ route('admin.subjects.rounds.document', [
                                                     'year' => $result->round_year,
                                                     'area' => $result->education_area_id,
                                                     'round' => $result->round_number,
                                                 ]) }}"
-                                                    target="_blank" class="btn btn-sm btn-info" title="ดูเอกสาร">
+                                                    target="_blank" class="btn btn-sm btn-secondary" title="ดูเอกสาร">
                                                     <i class="fas fa-file-alt"></i>
                                                 </a>
                                             @else
