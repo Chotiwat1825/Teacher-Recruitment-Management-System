@@ -6,7 +6,7 @@
     <div class="d-flex justify-content-between">
         <h1>รายละเอียดข้อมูลการบรรจุ</h1>
         <div>
-            @if($round[0]->round_number == $latestRound)
+            @if ($round[0]->round_number == $latestRound)
                 <button type="button" class="btn btn-success" id="nextRoundBtn">
                     <i class="fas fa-plus"></i> เพิ่มรอบการบรรจุ
                 </button>
@@ -14,8 +14,9 @@
                 <a href="{{ route('admin.subjects.rounds.show', [
                     'roundYear' => $round[0]->round_year,
                     'educationAreaId' => $round[0]->education_area_id,
-                    'roundNumber' => $latestRound
-                ]) }}" class="btn btn-success">
+                    'roundNumber' => $latestRound,
+                ]) }}"
+                    class="btn btn-success">
                     <i class="fas fa-arrow-right"></i> ไปที่รอบล่าสุด (รอบที่ {{ $latestRound }})
                 </a>
             @endif
@@ -62,6 +63,44 @@
         </div>
     </div>
 
+    {{-- เอกสารแนบ --}}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="card-title">เอกสารแนบ</h3>
+        </div>
+        <div class="card-body">
+            @if ($round[0]->document_path)
+                <div class="row">
+                    <div class="col-md-12">
+                        @php
+                            $extension = pathinfo($round[0]->document_path, PATHINFO_EXTENSION);
+                            $isImage = in_array(strtolower($extension), ['jpg', 'jpeg', 'png']);
+                        @endphp
+
+                        @if ($isImage)
+                            <div class="mb-3">
+                                <img src="{{ Storage::url($round[0]->document_path) }}" class="img-fluid"
+                                    style="max-height: 300px;" alt="เอกสารแนบ">
+                            </div>
+                        @endif
+
+                        <a href="{{ route('admin.subjects.rounds.document', [
+                            'year' => $round[0]->round_year,
+                            'area' => $round[0]->education_area_id,
+                            'round' => $round[0]->round_number,
+                        ]) }}"
+                            class="btn btn-primary" target="_blank">
+                            <i class="fas fa-download"></i>
+                            ดาวน์โหลดเอกสาร {{ strtoupper($extension) }}
+                        </a>
+                    </div>
+                </div>
+            @else
+                <p class="text-muted">ไม่มีเอกสารแนบ</p>
+            @endif
+        </div>
+    </div>
+
     {{-- รายละเอียดวิชาเอก --}}
     <div class="card">
         <div class="card-header">
@@ -82,12 +121,13 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @php 
+                        @php
                             $total = ['passed' => 0, 'appointed' => 0, 'vacancy' => 0, 'remaining' => 0];
                             $index = 1;
                         @endphp
                         @foreach ($round as $item)
-                            @if($item->vacancy > 0)  {{-- แสดงเฉพาะรายการที่มี vacancy > 0 --}}
+                            @if ($item->vacancy > 0)
+                                {{-- แสดงเฉพาะรายการที่มี vacancy > 0 --}}
                                 <tr>
                                     <td class="text-center">{{ $index++ }}</td>
                                     <td>{{ $item->subject_group }}</td>
@@ -105,7 +145,8 @@
                                 @endphp
                             @endif
                         @endforeach
-                        @if($total['vacancy'] > 0)  {{-- แสดงแถวรวมเมื่อมีข้อมูล --}}
+                        @if ($total['vacancy'] > 0)
+                            {{-- แสดงแถวรวมเมื่อมีข้อมูล --}}
                             <tr class="font-weight-bold bg-light">
                                 <td colspan="2" class="text-center">รวมทั้งหมด</td>
                                 <td class="text-center">{{ $total['passed'] }}</td>
@@ -153,22 +194,22 @@
                                     DB::raw('SUM(sr.appointed) as total_appointed'),
                                     DB::raw('SUM(sr.vacancy) as total_vacancy'),
                                     DB::raw('SUM(sr.remaining) as total_remaining'),
-                                    'sr.created_at'
+                                    'sr.created_at',
                                 )
                                 ->where([
                                     'sr.round_year' => $round[0]->round_year,
-                                    'sr.education_area_id' => $round[0]->education_area_id
+                                    'sr.education_area_id' => $round[0]->education_area_id,
                                 ])
                                 ->groupBy('sr.round_number', 'sr.created_at')
                                 ->orderBy('sr.round_number', 'asc')
                                 ->get();
                         @endphp
 
-                        @foreach($allRounds as $roundSummary)
+                        @foreach ($allRounds as $roundSummary)
                             <tr>
                                 <td class="text-center">
                                     {{ $roundSummary->round_number }}
-                                    @if($roundSummary->round_number == $round[0]->round_number)
+                                    @if ($roundSummary->round_number == $round[0]->round_number)
                                         <span class="badge badge-info">รอบปัจจุบัน</span>
                                     @endif
                                 </td>
@@ -176,13 +217,15 @@
                                 <td class="text-center">{{ $roundSummary->total_appointed }}</td>
                                 <td class="text-center">{{ $roundSummary->total_vacancy }}</td>
                                 <td class="text-center">{{ $roundSummary->total_remaining }}</td>
-                                <td class="text-center">{{ \Carbon\Carbon::parse($roundSummary->created_at)->format('d/m/Y') }}</td>
+                                <td class="text-center">
+                                    {{ \Carbon\Carbon::parse($roundSummary->created_at)->format('d/m/Y') }}</td>
                                 <td class="text-center">
                                     <a href="{{ route('admin.subjects.rounds.show', [
                                         'roundYear' => $round[0]->round_year,
                                         'educationAreaId' => $round[0]->education_area_id,
-                                        'roundNumber' => $roundSummary->round_number
-                                    ]) }}" class="btn btn-sm btn-info">
+                                        'roundNumber' => $roundSummary->round_number,
+                                    ]) }}"
+                                        class="btn btn-sm btn-info">
                                         <i class="fas fa-eye"></i> ดูรายละเอียด
                                     </a>
                                 </td>
@@ -249,11 +292,12 @@
                     cancelButtonText: 'ยกเลิก'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        window.location.href = "{{ route('admin.subjects.rounds.next', [
-                            'year' => $round[0]->round_year,
-                            'area' => $round[0]->education_area_id,
-                            'round' => $latestRound
-                        ]) }}";
+                        window.location.href =
+                            "{{ route('admin.subjects.rounds.next', [
+                                'year' => $round[0]->round_year,
+                                'area' => $round[0]->education_area_id,
+                                'round' => $latestRound,
+                            ]) }}";
                     }
                 });
             });

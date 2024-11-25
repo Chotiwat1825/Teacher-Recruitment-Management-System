@@ -41,7 +41,7 @@ Route::prefix('admin')
         Route::put('/rounds/update', [AdminController::class, 'subjects_rounds_update'])->name('subjects.rounds.update');
 
         Route::get('/subjects/rounds/next/{year}/{area}/{round}', [AdminController::class, 'subjects_rounds_next'])->name('subjects.rounds.next');
-
+        Route::get('/admin/subjects/rounds/{year}/{area}/{round}/document', [AdminController::class, 'downloadDocument'])->name('admin.subjects.rounds.document');
         // Profile
         Route::get('/profile/edit', [AdminController::class, 'profile_edit'])->name('profile.edit');
         Route::post('/profile/update', [AdminController::class, 'profile_update'])->name('profile.update');

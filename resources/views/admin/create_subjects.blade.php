@@ -74,6 +74,18 @@
                             @enderror
                         </div>
                     </div>
+                    <div class="form-group">
+                        <label for="document">เอกสารแนบ (PDF, JPEG, PNG)</label>
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="document" name="document"
+                                accept=".pdf,.jpeg,.jpg,.png">
+                            <label class="custom-file-label" for="document">เลือกไฟล์</label>
+                        </div>
+                        <small class="form-text text-muted">รองรับไฟล์ PDF, JPEG, PNG ขนาดไม่เกิน 10MB</small>
+                        @error('document')
+                            <div class="text-danger">{{ $message }}</div>
+                        @enderror
+                    </div>
                 </div>
             </div>
         </div>

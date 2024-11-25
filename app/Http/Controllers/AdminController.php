@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Storage;
 
 use App\Models\Admin;
 use App\Models\Subject;
@@ -192,6 +193,7 @@ class AdminController extends Controller
                 'items.*.vacancy' => 'required|integer|min:0', // จำนวนที่บรรจุ
                 'items.*.notes' => 'nullable|string',
                 'created_at' => 'required|date|after:1957-01-01|before:2100-12-31', // ตรวจสอบวันที่ให้อยู่ในช่วง พ.ศ. 2500-2643
+                'document' => 'nullable|file|mimes:pdf,jpeg,jpg,png|max:10240', // 10MB max
             ],
             [
                 'round_year.required' => 'กรุณาระบุปีการบรรจุ',
@@ -213,9 +215,20 @@ class AdminController extends Controller
                 'created_at.date' => 'วันที่ต้องเป็นวันที่',
                 'created_at.after' => 'วันที่ต้องเป็น คริตศักราช',
                 'created_at.before' => 'วันที่ต้องเป็น คริตศักราช',
+                'document.file' => 'เอกสารแนบต้องเป็นไฟล์',
+                'document.mimes' => 'เอกสารแนบต้องเป็นไฟล์ PDF, JPEG หรือ PNG เท่านั้น',
+                'document.max' => 'ขนาดไฟล์ต้องไม่เกิน 10MB',
             ],
         );
         //@dd($request->all());
+
+        // Handle file upload if a file was provided
+        $documentPath = null;
+        if ($request->hasFile('document')) {
+            $file = $request->file('document');
+            $documentPath = $file->store('subject-rounds-documents', 'public');
+        }
+
         foreach ($request->items as $item) {
             // ตรวจสอบว่าเป็นรอบแรก
             if ($request->round_number == 1) {
@@ -246,6 +259,7 @@ class AdminController extends Controller
                 'vacancy' => $item['vacancy'],
                 'remaining' => $remaining,
                 'notes' => $item['notes'] ?? '',
+                'document_path' => $documentPath,
                 'created_at' => $request->created_at,
                 'updated_at' => now(),
             ]);
@@ -468,5 +482,27 @@ class AdminController extends Controller
         $user->save();
 
         return redirect()->route('admin.profile.edit')->with('success', 'อัพเดทข้อมูลโปรไฟล์เรียบร้อยแล้ว');
+    }
+
+    // Add a method to handle document downloads
+    public function downloadDocument($roundYear, $educationAreaId, $roundNumber)
+    {
+        $round = DB::table('subjects_rounds')
+            ->where([
+                'round_year' => $roundYear,
+                'education_area_id' => $educationAreaId,
+                'round_number' => $roundNumber
+            ])
+            ->first();
+
+        if (!$round || !$round->document_path) {
+            return redirect()->back()->with('error', 'ไม่พบไฟล์เอกสาร');
+        }
+
+        if (!Storage::disk('public')->exists($round->document_path)) {
+            return redirect()->back()->with('error', 'ไม่พบไฟล์เอกสาร');
+        }
+
+        return Storage::disk('public')->download($round->document_path);
     }
 }
