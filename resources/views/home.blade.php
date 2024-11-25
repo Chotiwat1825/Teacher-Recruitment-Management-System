@@ -65,67 +65,55 @@
                 <h5 class="mb-0 text-dark"><i class="fas fa-search me-2"></i>ค้นหาข้อมูล</h5>
             </div>
             <div class="card-body">
-                <form action="{{ route('home.index') }}" method="GET">
+                <form action="{{ route('home.index') }}" method="GET" class="mb-4">
                     <div class="row g-3">
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label class="form-label">เขตพื้นที่การศึกษา</label>
-                                <select class="form-select select2" name="education_area">
-                                    <option value="">ทั้งหมด</option>
-                                    @foreach ($educationAreas as $area)
-                                        <option value="{{ $area->id }}"
-                                            {{ request('education_area') == $area->id ? 'selected' : '' }}>
-                                            {{ $area->name_education }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                @error('education_area')
-                                    <span class="text-danger">{{ $message }}</span>
-                                @enderror
+                        <div class="col-md-3">
+                            <label for="education_area" class="form-label">เขตพื้นที่การศึกษา</label>
+                            <select name="education_area" id="education_area" class="form-select select2">
+                                <option value="">ทั้งหมด</option>
+                                @foreach ($educationAreas as $area)
+                                    <option value="{{ $area->id }}"
+                                        {{ request('education_area') == $area->id ? 'selected' : '' }}>
+                                        {{ $area->name_education }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="year" class="form-label">ปีการศึกษา</label>
+                            <select name="year" id="year" class="form-select select2">
+                                <option value="">ทั้งหมด</option>
+                                @foreach ($years as $year)
+                                    <option value="{{ $year }}" {{ request('year') == $year ? 'selected' : '' }}>
+                                        {{ $year }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="subject_group" class="form-label">กลุ่มวิชาเอก</label>
+                            <select name="subject_group" id="subject_group" class="form-select select2">
+                                <option value="">ทั้งหมด</option>
+                                @foreach ($subjects as $subject)
+                                    <option value="{{ $subject->id }}"
+                                        {{ request('subject_group') == $subject->id ? 'selected' : '' }}>
+                                        {{ $subject->subject_group }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <div class="d-grid w-100 gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-search me-2"></i>ค้นหา
+                                </button>
+                                @if (request()->hasAny(['education_area', 'year', 'subject_group']))
+                                    <a href="{{ route('home.index') }}" class="btn btn-secondary">
+                                        <i class="fas fa-undo me-2"></i>ล้างการค้นหา
+                                    </a>
+                                @endif
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label class="form-label">กลุ่มวิชาเอก</label>
-                                <select class="form-select select2" name="subject_group">
-                                    <option value="">ทั้งหมด</option>
-                                    @foreach ($subjects as $subject)
-                                        <option value="{{ $subject->id }}"
-                                            {{ request('subject_group') == $subject->id ? 'selected' : '' }}>
-                                            {{ $subject->subject_group }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                @error('subject_group')
-                                    <span class="text-danger">{{ $message }}</span>
-                                @enderror
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label class="form-label">ปีการบรรจุ</label>
-                                <select class="form-select" name="year">
-                                    <option value="">ทั้งหมด</option>
-                                    @foreach ($years as $year)
-                                        <option value="{{ $year }}"
-                                            {{ request('year') == $year ? 'selected' : '' }}>
-                                            {{ $year }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                @error('year')
-                                    <span class="text-danger">{{ $message }}</span>
-                                @enderror
-                            </div>
-                        </div>
-                    </div>
-                    <div class="text-center mt-4">
-                        <button type="submit" class="btn btn-primary px-4">
-                            <i class="fas fa-search me-2"></i>ค้นหา
-                        </button>
-                        <a href="{{ route('home.index') }}" class="btn btn-outline-secondary px-4 ms-2">
-                            <i class="fas fa-redo me-2"></i>ล้างการค้นหา
-                        </a>
                     </div>
                 </form>
             </div>
@@ -142,19 +130,15 @@
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-hover" id="results-table">
+                        <table class="table table-hover">
                             <thead class="table-light">
                                 <tr>
-                                    <th>ปี</th>
-                                    <th>เขตพื้นที่</th>
+                                    <th>ปีการศึกษา</th>
+                                    <th>เขตพื้นที่การศึกษา</th>
                                     <th>กลุ่มวิชาเอก</th>
                                     <th class="text-center">รอบที่</th>
-                                    <th class="text-center">ผู้สอบผ่าน</th>
-                                    <th class="text-center">บรรจุแล้ว</th>
-                                    <th class="text-center">บรรจุรอบนี้</th>
-                                    <th class="text-center">คงเหลือ</th>
-                                    <th>วันที่ประกาศ</th>
-                                    <th class="text-center">เอกสาร</th>
+                                    <th class="text-center">วันที่ประกาศ</th>
+                                    <th class="text-center">การดำเนินการ</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -164,16 +148,14 @@
                                         <td>{{ $result->name_education }}</td>
                                         <td>{{ $result->subject_group }}</td>
                                         <td class="text-center">{{ $result->round_number }}</td>
-                                        <td class="text-center">{{ number_format($result->passed_exam) }}</td>
-                                        <td class="text-center">{{ number_format($result->appointed) }}</td>
-                                        <td class="text-center">{{ number_format($result->vacancy) }}</td>
-                                        <td class="text-center">{{ number_format($result->remaining) }}</td>
-                                        <td>{{ \Carbon\Carbon::parse($result->created_at)->format('d/m/Y') }}</td>
+                                        <td class="text-center">
+                                            {{ \Carbon\Carbon::parse($result->created_at)->format('d/m/Y') }}
+                                        </td>
                                         <td class="text-center">
                                             <a href="{{ route('home.rounds.show', [
                                                 'roundYear' => $result->round_year,
                                                 'educationAreaId' => $result->education_area_id,
-                                                'roundNumber' => $result->round_number,
+                                                'roundNumber' => $result->round_number
                                             ]) }}"
                                                 class="btn btn-sm btn-info me-2" title="ดูรายละเอียด">
                                                 <i class="fas fa-eye"></i>
@@ -183,7 +165,7 @@
                                                 <a href="{{ route('admin.subjects.rounds.document', [
                                                     'year' => $result->round_year,
                                                     'area' => $result->education_area_id,
-                                                    'round' => $result->round_number,
+                                                    'round' => $result->round_number
                                                 ]) }}"
                                                     target="_blank" class="btn btn-sm btn-secondary" title="ดูเอกสาร">
                                                     <i class="fas fa-file-alt"></i>
@@ -197,7 +179,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="10" class="text-center py-4">
+                                        <td colspan="6" class="text-center py-4">
                                             <div class="text-muted">
                                                 <i class="fas fa-search fa-2x mb-3 d-block"></i>
                                                 ไม่พบข้อมูลที่ค้นหา
@@ -209,7 +191,7 @@
                         </table>
                     </div>
                     <div class="d-flex justify-content-center mt-4">
-                        {{ $results->withQueryString()->links() }}
+                        {{ $results->links() }}
                     </div>
                 </div>
             </div>

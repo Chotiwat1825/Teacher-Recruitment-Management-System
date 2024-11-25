@@ -125,24 +125,31 @@ class Subject_rounds extends Model
     public static function getSearchResults($request)
     {
         $query = self::select(
-            'subjects_rounds.*',
-            'subjects.subject_group',
-            'education_area.name_education'
+            'subjects_rounds.round_year',
+            'subjects_rounds.round_number',
+            'subjects_rounds.created_at',
+            'subjects_rounds.document_path',
+            'subjects_rounds.education_area_id',
+            'education_area.name_education',
+            'subjects.subject_group'
         )
+        ->join('education_area', 'education_area.id', '=', 'subjects_rounds.education_area_id')
         ->join('subjects', 'subjects.id', '=', 'subjects_rounds.subject_id')
-        ->join('education_area', 'education_area.id', '=', 'subjects_rounds.education_area_id');
+        ->distinct();
 
         if ($request->education_area) {
             $query->where('education_area_id', $request->education_area);
         }
-        if ($request->subject_group) {
-            $query->where('subject_id', $request->subject_group);
-        }
         if ($request->year) {
             $query->where('round_year', $request->year);
         }
+        if ($request->subject_group) {
+            $query->where('subjects.id', $request->subject_group);
+        }
 
-        return $query->orderBy('created_at', 'desc')
+        return $query->orderBy('round_year', 'desc')
+            ->orderBy('education_area.name_education', 'asc')
+            ->orderBy('round_number', 'desc')
             ->paginate(25);
     }
 }
