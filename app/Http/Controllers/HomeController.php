@@ -28,14 +28,20 @@ class HomeController extends Controller
     {
         $validated = $request->validate(
             [
-                'education_area' => 'nullable|string',
-                'subject_group' => 'nullable|string',
-                'year' => 'nullable|string',
+                'education_area' => 'nullable|string|max:255|regex:/^[0-9]+$/',
+                'subject_group' => 'nullable|string|max:255|regex:/^[0-9]+$/',
+                'year' => 'nullable|string|max:4|regex:/^[0-9]{4}$/',
             ],
             [
                 'education_area.string' => 'เขตพื้นที่การศึกษาไม่ถูกต้อง',
-                'subject_group.string' => 'กลุ่มวิชาเอกไม่ถูกต้อง',
+                'education_area.max' => 'เขตพื้นที่การศึกษาไม่ถูกต้อง',
+                'education_area.regex' => 'เขตพื้นที่การศึกษาต้องเป็นตัวเลขเท่านั้น',
+                'subject_group.string' => 'กลุ่มวิชาเอกไม่ถูกต้อง', 
+                'subject_group.max' => 'กลุ่มวิชาเอกไม่ถูกต้อง',
+                'subject_group.regex' => 'กลุ่มวิชาเอกต้องเป็นตัวเลขเท่านั้น',
                 'year.string' => 'ปีการศึกษาไม่ถูกต้อง',
+                'year.max' => 'ปีการศึกษาไม่ถูกต้อง',
+                'year.regex' => 'ปีการศึกษาต้องเป็นตัวเลข 4 หลักเท่านั้น',
             ],
         );
 
@@ -49,8 +55,8 @@ class HomeController extends Controller
         $totalAppointed = Subject_rounds::sum('vacancy');
 
         $results = null;
-        if ($request->has('education_area') || $request->has('subject_group') || $request->has('year')) {
-            $results = Subject_rounds::getSearchResults($request);
+        if ($request->filled('education_area') || $request->filled('subject_group') || $request->filled('year')) {
+            $results = Subject_rounds::getSearchResults($validated);
         }
 
         return view('home', compact('educationAreas', 'subjects', 'years', 'results', 'totalSubjects', 'totalPassedExam', 'totalAppointed'));

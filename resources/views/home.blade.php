@@ -154,6 +154,7 @@
                                     <th class="text-center">บรรจุรอบนี้</th>
                                     <th class="text-center">คงเหลือ</th>
                                     <th>วันที่ประกาศ</th>
+                                    <th class="text-center">เอกสาร</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -168,10 +169,26 @@
                                         <td class="text-center">{{ number_format($result->vacancy) }}</td>
                                         <td class="text-center">{{ number_format($result->remaining) }}</td>
                                         <td>{{ \Carbon\Carbon::parse($result->created_at)->format('d/m/Y') }}</td>
+                                        <td class="text-center">
+                                            @if ($result->document_path)
+                                                <a href="{{ route('admin.subjects.rounds.document', [
+                                                    'year' => $result->round_year,
+                                                    'area' => $result->education_area_id,
+                                                    'round' => $result->round_number,
+                                                ]) }}"
+                                                    target="_blank" class="btn btn-sm btn-info" title="ดูเอกสาร">
+                                                    <i class="fas fa-file-alt"></i>
+                                                </a>
+                                            @else
+                                                <span class="text-muted">
+                                                    <i class="fas fa-times"></i>
+                                                </span>
+                                            @endif
+                                        </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="9" class="text-center py-4">
+                                        <td colspan="10" class="text-center py-4">
                                             <div class="text-muted">
                                                 <i class="fas fa-search fa-2x mb-3 d-block"></i>
                                                 ไม่พบข้อมูลที่ค้นหา
