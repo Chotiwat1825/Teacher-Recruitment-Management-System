@@ -45,7 +45,7 @@ class HomeController extends Controller
 
         // สถิติรวม
         $totalSubjects = Subject::count();
-        $totalPassedExam = Subject_rounds::sum('passed_exam');
+        $totalPassedExam = Subject_rounds::where('round_number', 1)->sum('passed_exam');
         $totalAppointed = Subject_rounds::sum('vacancy');
 
         $results = null;

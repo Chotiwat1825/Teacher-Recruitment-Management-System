@@ -9,7 +9,7 @@
 
 
 @section('content')
-    <form action="{{ route('admin.subjects.rounds.create') }}" method="POST">
+    <form action="{{ route('admin.subjects.rounds.create') }}" method="POST" enctype="multipart/form-data">
         @csrf
 
         {{-- ส่วนข้อมูลทั่วไปของรอบการบรรจุ --}}
@@ -238,10 +238,10 @@
                 let appointed = parseInt($row.find('.appointed-display').val()) || 0;
                 let vacancy = parseInt($row.find('.vacancy-input').val()) || 0;
                 let remaining = passed - (appointed + vacancy);
-                
+
                 // อัพเดทค่า remaining
                 $row.find('.remaining-display').val(remaining);
-                
+
                 // เพิ่มสีแสดงสถานะ
                 let $remainingDisplay = $row.find('.remaining-display');
                 if (remaining < 0) {
@@ -257,11 +257,11 @@
                 let $passedExam = $row.find('.passed-exam');
                 let $vacancy = $row.find('.vacancy-input');
                 let $appointed = $row.find('.appointed-display');
-                
+
                 let passed = parseInt($passedExam.val()) || 0;
                 let appointed = parseInt($appointed.val()) || 0;
                 let vacancy = parseInt($vacancy.val()) || 0;
-                
+
                 // ตรวจสอบค่าติดลบ
                 if (passed < 0) {
                     passed = 0;
@@ -305,7 +305,7 @@
             $('#add-item').click(function() {
                 let roundNumber = parseInt($('#round_number').val()) || 0;
                 let template = $('.subject-item').first().clone();
-                
+
                 // อัพเดต index ให้ถูกต้อง
                 itemCount = $('.subject-item').length; // นับจำนวนรายการปัจจุบัน
 
@@ -409,6 +409,12 @@
                     name: 'items_count',
                     value: items.length
                 }).appendTo($(this));
+            });
+
+            // Show selected filename in the custom file input
+            $('.custom-file-input').on('change', function() {
+                let fileName = $(this).val().split('\\').pop();
+                $(this).next('.custom-file-label').addClass("selected").html(fileName);
             });
         });
     </script>
