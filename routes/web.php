@@ -6,7 +6,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\HomeController;
 
 Route::get('/', function () {
-    return redirect()->route('home');
+    return redirect()->route('home.index');
 });
 
 Auth::routes();
@@ -15,7 +15,7 @@ Route::prefix('home')
     ->name('home.')
     ->group(function () {
         Route::get('/', [HomeController::class, 'index'])->name('index');
-        Route::get('/rounds/{roundYear}/{educationAreaId}/{roundNumber}', [HomeController::class, 'show'])->name('rounds.show');
+        Route::get('/rounds/{roundYear}/{educationAreaId}/{roundNumber}', [RoundController::class, 'show'])->name('rounds.show');
     });
 
 // Profile
