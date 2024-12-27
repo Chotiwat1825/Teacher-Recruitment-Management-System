@@ -64,42 +64,53 @@
     </div>
 
     {{-- เอกสารแนบ --}}
-    <div class="card mb-4">
-        <div class="card-header">
-            <h3 class="card-title">เอกสารแนบ</h3>
-        </div>
-        <div class="card-body">
-            @if ($round[0]->document_path)
-                <div class="row">
-                    <div class="col-md-12">
-                        @php
-                            $extension = pathinfo($round[0]->document_path, PATHINFO_EXTENSION);
-                            $isImage = in_array(strtolower($extension), ['jpg', 'jpeg', 'png']);
-                        @endphp
 
-                        @if ($isImage)
-                            <div class="mb-3">
-                                <img src="{{ Storage::url($round[0]->document_path) }}" class="img-fluid"
-                                    style="max-height: 300px;" alt="เอกสารแนบ">
-                            </div>
-                        @endif
+    @if ($round[0]->document_path)
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">เอกสารแนบ</h5>
+            </div>
+            <div class="card-body">
+                @php
+                    $extension = pathinfo($round[0]->document_path, PATHINFO_EXTENSION);
+                    $isImage = in_array(strtolower($extension), ['jpg', 'jpeg', 'png']);
+                @endphp
 
-                        <a href="{{ route('admin.subjects.rounds.document', [
+                @if ($isImage)
+                    <div class="mb-3">
+                        {{-- แก้ไขการแสดงรูปภาพโดยใช้ route เดียวกับที่ใช้ดาวน์โหลด --}}
+                        <img src="{{ route('admin.subjects.rounds.document', [
                             'year' => $round[0]->round_year,
                             'area' => $round[0]->education_area_id,
                             'round' => $round[0]->round_number,
                         ]) }}"
-                            class="btn btn-primary" target="_blank">
-                            <i class="fas fa-download"></i>
-                            ดาวน์โหลดเอกสาร {{ strtoupper($extension) }}
-                        </a>
+                            class="img-fluid" style="max-height: 300px;" alt="เอกสารแนบ"
+                            onerror="this.style.display='none'">
                     </div>
-                </div>
-            @else
-                <p class="text-muted">ไม่มีเอกสารแนบ</p>
-            @endif
+                @endif
+
+                <a href="{{ route('admin.subjects.rounds.document', [
+                    'year' => $round[0]->round_year,
+                    'area' => $round[0]->education_area_id,
+                    'round' => $round[0]->round_number,
+                ]) }}"
+                    class="btn btn-primary" target="_blank">
+                    <i class="fas fa-download"></i>
+                    ดาวน์โหลดเอกสาร {{ strtoupper($extension) }}
+                </a>
+            </div>
         </div>
-    </div>
+    @else
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">เอกสารแนบ</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">ไม่มีเอกสารแนบ</p>
+            </div>
+        </div>
+    @endif
+
 
     {{-- รายละเอียดวิชาเอก --}}
     <div class="card">

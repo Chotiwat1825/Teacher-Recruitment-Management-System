@@ -6,7 +6,7 @@
             <div class="card-header">
                 <div class="d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">รายละเอียดข้อมูลการบรรจุ</h5>
-                    <a href="{{ url()->previous() }}" class="btn btn-secondary">
+                    <a href="{{ route('home.index') }}" class="btn btn-secondary">
                         <i class="fas fa-arrow-left"></i> กลับ
                     </a>
                 </div>
@@ -37,13 +37,28 @@
 
         {{-- เอิ่มส่วนสรุปข้อมูลหลังจากข้อมูลทั่วไป --}}
         <div class="row mt-4">
+            @php
+                $currentRoundSummary = DB::table('subjects_rounds AS sr')
+                    ->select(
+                        DB::raw('SUM(sr.passed_exam) as total_passed'),
+                        DB::raw('SUM(sr.appointed) as total_appointed'),
+                        DB::raw('SUM(sr.vacancy) as total_vacancy'),
+                        DB::raw('SUM(sr.remaining) as total_remaining'),
+                    )
+                    ->where([
+                        'sr.round_year' => $round[0]->round_year,
+                        'sr.education_area_id' => $round[0]->education_area_id,
+                        'sr.round_number' => $round[0]->round_number,
+                    ])
+                    ->first();
+            @endphp
             <div class="col-md-3">
                 <div class="info-card bg-primary bg-gradient">
                     <div class="info-card-icon">
                         <i class="fas fa-users"></i>
                     </div>
                     <div class="info-card-details">
-                        <h3>{{ number_format($round[0]->passed_exam) }}</h3>
+                        <h3>{{ number_format($currentRoundSummary->total_passed) }}</h3>
                         <p>ผู้สอบผ่านขึ้นบัญชี</p>
                     </div>
                 </div>
@@ -54,7 +69,7 @@
                         <i class="fas fa-user-check"></i>
                     </div>
                     <div class="info-card-details">
-                        <h3>{{ number_format($round[0]->appointed) }}</h3>
+                        <h3>{{ number_format($currentRoundSummary->total_appointed) }}</h3>
                         <p>บรรจุแล้ว</p>
                     </div>
                 </div>
@@ -65,7 +80,7 @@
                         <i class="fas fa-user-plus"></i>
                     </div>
                     <div class="info-card-details">
-                        <h3>{{ number_format($round[0]->vacancy) }}</h3>
+                        <h3>{{ number_format($currentRoundSummary->total_vacancy) }}</h3>
                         <p>บรรจุรอบนี้</p>
                     </div>
                 </div>
@@ -76,7 +91,7 @@
                         <i class="fas fa-user-clock"></i>
                     </div>
                     <div class="info-card-details">
-                        <h3>{{ number_format($round[0]->remaining) }}</h3>
+                        <h3>{{ number_format($currentRoundSummary->total_remaining) }}</h3>
                         <p>คงเหลือ</p>
                     </div>
                 </div>
@@ -97,8 +112,14 @@
 
                     @if ($isImage)
                         <div class="mb-3">
-                            <img src="{{ Storage::url($round[0]->document_path) }}" class="img-fluid"
-                                style="max-height: 300px;" alt="เอกสารแนบ">
+                            {{-- แก้ไขการแสดงรูปภาพโดยใช้ route เดียวกับที่ใช้ดาวน์โหลด --}}
+                            <img src="{{ route('admin.subjects.rounds.document', [
+                                'year' => $round[0]->round_year,
+                                'area' => $round[0]->education_area_id,
+                                'round' => $round[0]->round_number,
+                            ]) }}"
+                                class="img-fluid" style="max-height: 300px;" alt="เอกสารแนบ"
+                                onerror="this.style.display='none'">
                         </div>
                     @endif
 
@@ -247,7 +268,7 @@
                                 <td class="text-center">รวมทั้งหมด</td>
                                 <td class="text-center">{{ number_format($allRounds->max('total_passed')) }}</td>
                                 <td class="text-center">{{ number_format($allRounds->sum('total_vacancy')) }}</td>
-                                <td class="text-center">{{ number_format($allRounds->last()->total_vacancy) }}</td>
+                                <td class="text-center">{{ number_format($allRounds->sum('total_vacancy')) }}</td>
                                 <td class="text-center">{{ number_format($allRounds->last()->total_remaining) }}</td>
                                 <td colspan="2"></td>
                             </tr>
