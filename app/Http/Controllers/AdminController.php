@@ -28,7 +28,7 @@ class AdminController extends Controller
         // สรุปข้อมูลทั่วไป
         $totalSubjects = Subject::count();
         $totalEducationAreas = Admin::count();
-        $totalPassedExam = Subject_rounds::sum('passed_exam');
+        $totalPassedExam = Subject_rounds::where('round_number', "1")->sum('passed_exam');
         $totalAppointed = Subject_rounds::sum('vacancy');
 
         // สถิติร่างๆ
