@@ -16,13 +16,11 @@ use App\Models\Subject;
 use App\Models\Subject_rounds;
 use App\Rules\MatchOldPassword;
 
-
-
 class AdminController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth');
+        $this->middleware('auth', ['except' => ['viewDocument']]);
     }
 
     public function index()
@@ -104,10 +102,11 @@ class AdminController extends Controller
     public function subjects_index()
     {
         $subjects = Subject::orderBy('subject_group')->get();
+        //dd($subjects);
         return view('admin.subjects_index', compact('subjects'));
     }
 
-    public function store(Request $request)
+    public function subjects_store(Request $request)
     {
         $request->validate(
             [
@@ -126,7 +125,7 @@ class AdminController extends Controller
         return redirect()->route('admin.subjects.index')->with('success', 'เพิ่มข้อมูลวิชาเอกเรียบร้อยแล้ว');
     }
 
-    public function update(Request $request, $id)
+    public function subjects_update(Request $request, $id)
     {
         $subject = Subject::findOrFail($id);
 
@@ -147,7 +146,7 @@ class AdminController extends Controller
         return redirect()->route('admin.subjects.index')->with('success', 'แก้ไขข้อมูลวิชาเอกเรียบร้อยแล้ว');
     }
 
-    public function destroy($id)
+    public function subjects_destroy($id)
     {
         $subject = Subject::findOrFail($id);
 

@@ -29,7 +29,7 @@
                         <tr>
                             <th style="width: 60px;">ลำดับ</th>
                             <th>กลุ่มวิชาเอก</th>
-                            <th style="width: 150px;">การจัดการ</th>
+                            <th style="width: 150px;">จัดการ</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -40,11 +40,11 @@
                                 <td class="text-center">
                                     <button type="button" class="btn btn-warning btn-sm edit-subject"
                                         data-id="{{ $subject->id }}" data-group="{{ $subject->subject_group }}">
-                                        <i class="fas fa-edit"></i> แก้ไข
+                                        <i class="fas fa-edit"></i>
                                     </button>
                                     <button type="button" class="btn btn-danger btn-sm delete-subject"
                                         data-id="{{ $subject->id }}" data-group="{{ $subject->subject_group }}">
-                                        <i class="fas fa-trash"></i> ลบ
+                                        <i class="fas fa-trash"></i>
                                     </button>
                                 </td>
                             </tr>
@@ -74,8 +74,8 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">ยกเลิก</button>
                         <button type="submit" class="btn btn-primary">บันทึก</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">ยกเลิก</button>
                     </div>
                 </form>
             </div>
@@ -103,8 +103,9 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">ยกเลิก</button>
                         <button type="submit" class="btn btn-primary">บันทึก</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">ยกเลิก</button>
+
                     </div>
                 </form>
             </div>
